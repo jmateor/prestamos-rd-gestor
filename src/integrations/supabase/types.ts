@@ -119,6 +119,53 @@ export type Database = {
         }
         Relationships: []
       }
+      garantes: {
+        Row: {
+          cedula: string
+          created_at: string
+          direccion: string | null
+          id: string
+          ingreso_mensual: number | null
+          lugar_trabajo: string | null
+          nombre_completo: string
+          relacion: string
+          solicitud_id: string
+          telefono: string
+        }
+        Insert: {
+          cedula: string
+          created_at?: string
+          direccion?: string | null
+          id?: string
+          ingreso_mensual?: number | null
+          lugar_trabajo?: string | null
+          nombre_completo: string
+          relacion?: string
+          solicitud_id: string
+          telefono: string
+        }
+        Update: {
+          cedula?: string
+          created_at?: string
+          direccion?: string | null
+          id?: string
+          ingreso_mensual?: number | null
+          lugar_trabajo?: string | null
+          nombre_completo?: string
+          relacion?: string
+          solicitud_id?: string
+          telefono?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garantes_solicitud_id_fkey"
+            columns: ["solicitud_id"]
+            isOneToOne: false
+            referencedRelation: "solicitudes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -151,6 +198,68 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      solicitudes: {
+        Row: {
+          cliente_id: string
+          comentarios_evaluacion: string | null
+          created_at: string
+          estado: string
+          evaluado_por: string | null
+          fecha_evaluacion: string | null
+          frecuencia_pago: string
+          id: string
+          monto_solicitado: number
+          numero_solicitud: string
+          oficial_credito_id: string
+          plazo_meses: number
+          proposito: string
+          tasa_interes_sugerida: number | null
+          updated_at: string
+        }
+        Insert: {
+          cliente_id: string
+          comentarios_evaluacion?: string | null
+          created_at?: string
+          estado?: string
+          evaluado_por?: string | null
+          fecha_evaluacion?: string | null
+          frecuencia_pago: string
+          id?: string
+          monto_solicitado: number
+          numero_solicitud: string
+          oficial_credito_id: string
+          plazo_meses: number
+          proposito?: string
+          tasa_interes_sugerida?: number | null
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string
+          comentarios_evaluacion?: string | null
+          created_at?: string
+          estado?: string
+          evaluado_por?: string | null
+          fecha_evaluacion?: string | null
+          frecuencia_pago?: string
+          id?: string
+          monto_solicitado?: number
+          numero_solicitud?: string
+          oficial_credito_id?: string
+          plazo_meses?: number
+          proposito?: string
+          tasa_interes_sugerida?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitudes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
