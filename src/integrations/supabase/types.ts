@@ -14,6 +14,111 @@ export type Database = {
   }
   public: {
     Tables: {
+      clientes: {
+        Row: {
+          antiguedad_laboral: string | null
+          cargo: string | null
+          cedula: string
+          ciudad: string | null
+          created_at: string
+          created_by: string | null
+          direccion: string | null
+          direccion_trabajo: string | null
+          email: string | null
+          estado: string
+          estado_civil: string | null
+          fecha_nacimiento: string | null
+          id: string
+          ingreso_mensual: number | null
+          lugar_trabajo: string | null
+          nacionalidad: string | null
+          notas: string | null
+          otros_ingresos: number | null
+          primer_apellido: string
+          primer_nombre: string
+          provincia: string | null
+          referencia_direccion: string | null
+          sector: string | null
+          segundo_apellido: string | null
+          segundo_nombre: string | null
+          sexo: string | null
+          telefono: string
+          telefono_trabajo: string | null
+          telefono2: string | null
+          tiempo_residencia: string | null
+          tipo_vivienda: string | null
+          updated_at: string
+        }
+        Insert: {
+          antiguedad_laboral?: string | null
+          cargo?: string | null
+          cedula: string
+          ciudad?: string | null
+          created_at?: string
+          created_by?: string | null
+          direccion?: string | null
+          direccion_trabajo?: string | null
+          email?: string | null
+          estado?: string
+          estado_civil?: string | null
+          fecha_nacimiento?: string | null
+          id?: string
+          ingreso_mensual?: number | null
+          lugar_trabajo?: string | null
+          nacionalidad?: string | null
+          notas?: string | null
+          otros_ingresos?: number | null
+          primer_apellido: string
+          primer_nombre: string
+          provincia?: string | null
+          referencia_direccion?: string | null
+          sector?: string | null
+          segundo_apellido?: string | null
+          segundo_nombre?: string | null
+          sexo?: string | null
+          telefono: string
+          telefono_trabajo?: string | null
+          telefono2?: string | null
+          tiempo_residencia?: string | null
+          tipo_vivienda?: string | null
+          updated_at?: string
+        }
+        Update: {
+          antiguedad_laboral?: string | null
+          cargo?: string | null
+          cedula?: string
+          ciudad?: string | null
+          created_at?: string
+          created_by?: string | null
+          direccion?: string | null
+          direccion_trabajo?: string | null
+          email?: string | null
+          estado?: string
+          estado_civil?: string | null
+          fecha_nacimiento?: string | null
+          id?: string
+          ingreso_mensual?: number | null
+          lugar_trabajo?: string | null
+          nacionalidad?: string | null
+          notas?: string | null
+          otros_ingresos?: number | null
+          primer_apellido?: string
+          primer_nombre?: string
+          provincia?: string | null
+          referencia_direccion?: string | null
+          sector?: string | null
+          segundo_apellido?: string | null
+          segundo_nombre?: string | null
+          sexo?: string | null
+          telefono?: string
+          telefono_trabajo?: string | null
+          telefono2?: string | null
+          tiempo_residencia?: string | null
+          tipo_vivienda?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
