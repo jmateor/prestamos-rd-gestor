@@ -119,6 +119,59 @@ export type Database = {
         }
         Relationships: []
       }
+      cuotas: {
+        Row: {
+          capital: number
+          created_at: string
+          estado: string
+          fecha_pago: string | null
+          fecha_vencimiento: string
+          id: string
+          interes: number
+          monto_cuota: number
+          monto_pagado: number
+          numero_cuota: number
+          prestamo_id: string
+          saldo_pendiente: number
+        }
+        Insert: {
+          capital?: number
+          created_at?: string
+          estado?: string
+          fecha_pago?: string | null
+          fecha_vencimiento: string
+          id?: string
+          interes?: number
+          monto_cuota: number
+          monto_pagado?: number
+          numero_cuota: number
+          prestamo_id: string
+          saldo_pendiente?: number
+        }
+        Update: {
+          capital?: number
+          created_at?: string
+          estado?: string
+          fecha_pago?: string | null
+          fecha_vencimiento?: string
+          id?: string
+          interes?: number
+          monto_cuota?: number
+          monto_pagado?: number
+          numero_cuota?: number
+          prestamo_id?: string
+          saldo_pendiente?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cuotas_prestamo_id_fkey"
+            columns: ["prestamo_id"]
+            isOneToOne: false
+            referencedRelation: "prestamos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       garantes: {
         Row: {
           cedula: string
@@ -159,6 +212,125 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "garantes_solicitud_id_fkey"
+            columns: ["solicitud_id"]
+            isOneToOne: false
+            referencedRelation: "solicitudes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pagos: {
+        Row: {
+          created_at: string
+          cuota_id: string | null
+          fecha_pago: string
+          id: string
+          metodo_pago: string
+          monto_pagado: number
+          notas: string | null
+          prestamo_id: string
+          recibido_por: string | null
+          referencia: string | null
+        }
+        Insert: {
+          created_at?: string
+          cuota_id?: string | null
+          fecha_pago?: string
+          id?: string
+          metodo_pago?: string
+          monto_pagado: number
+          notas?: string | null
+          prestamo_id: string
+          recibido_por?: string | null
+          referencia?: string | null
+        }
+        Update: {
+          created_at?: string
+          cuota_id?: string | null
+          fecha_pago?: string
+          id?: string
+          metodo_pago?: string
+          monto_pagado?: number
+          notas?: string | null
+          prestamo_id?: string
+          recibido_por?: string | null
+          referencia?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagos_cuota_id_fkey"
+            columns: ["cuota_id"]
+            isOneToOne: false
+            referencedRelation: "cuotas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_prestamo_id_fkey"
+            columns: ["prestamo_id"]
+            isOneToOne: false
+            referencedRelation: "prestamos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prestamos: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          estado: string
+          fecha_desembolso: string
+          fecha_vencimiento: string | null
+          frecuencia_pago: string
+          id: string
+          metodo_amortizacion: string
+          monto_aprobado: number
+          notas: string | null
+          numero_prestamo: string
+          oficial_credito_id: string
+          plazo_meses: number
+          solicitud_id: string | null
+          tasa_interes: number
+          updated_at: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          estado?: string
+          fecha_desembolso?: string
+          fecha_vencimiento?: string | null
+          frecuencia_pago?: string
+          id?: string
+          metodo_amortizacion?: string
+          monto_aprobado: number
+          notas?: string | null
+          numero_prestamo: string
+          oficial_credito_id: string
+          plazo_meses: number
+          solicitud_id?: string | null
+          tasa_interes: number
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          estado?: string
+          fecha_desembolso?: string
+          fecha_vencimiento?: string | null
+          frecuencia_pago?: string
+          id?: string
+          metodo_amortizacion?: string
+          monto_aprobado?: number
+          notas?: string | null
+          numero_prestamo?: string
+          oficial_credito_id?: string
+          plazo_meses?: number
+          solicitud_id?: string | null
+          tasa_interes?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prestamos_solicitud_id_fkey"
             columns: ["solicitud_id"]
             isOneToOne: false
             referencedRelation: "solicitudes"
