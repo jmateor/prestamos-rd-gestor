@@ -19,11 +19,21 @@ export function PagoRapidoDialog({ cuota, onClose }: Props) {
   const pendiente = cuota ? cuota.monto_cuota - cuota.monto_pagado : 0;
 
   const [form, setForm] = useState({
-    monto: '',
+    monto: pendiente > 0 ? pendiente.toFixed(2) : '',
     fecha: new Date().toISOString().split('T')[0],
     metodo: 'efectivo',
     referencia: '',
   });
+
+  // Auto-fill monto when cuota changes
+  const prevCuotaId = useState<string | null>(null);
+  if (cuota && cuota.id !== prevCuotaId[0]) {
+    prevCuotaId[1](cuota.id);
+    setForm((p) => ({ ...p, monto: (cuota.monto_cuota - cuota.monto_pagado).toFixed(2) }));
+  }
+  if (!cuota && prevCuotaId[0]) {
+    prevCuotaId[1](null);
+  }
 
   const handleSubmit = async () => {
     if (!cuota || !form.monto) return;
