@@ -261,6 +261,8 @@ export function useRegistrarPago() {
       queryClient.invalidateQueries({ queryKey: ['cuotas', vars.prestamo_id] });
       queryClient.invalidateQueries({ queryKey: ['pagos', vars.prestamo_id] });
       queryClient.invalidateQueries({ queryKey: ['prestamos'] });
+      queryClient.invalidateQueries({ queryKey: ['cobranza'] });
+      queryClient.invalidateQueries({ queryKey: ['cobranza-resumen'] });
       toast.success('Pago registrado');
     },
     onError: (e: any) => toast.error('Error al registrar pago: ' + e.message),
