@@ -377,6 +377,200 @@ export type Database = {
           },
         ]
       }
+      garantes_personales: {
+        Row: {
+          cargo: string | null
+          cedula: string
+          cliente_id: string | null
+          created_at: string
+          direccion: string | null
+          email: string | null
+          estado: string | null
+          id: string
+          ingreso_mensual: number | null
+          lugar_trabajo: string | null
+          nombre_completo: string
+          notas: string | null
+          prestamo_id: string | null
+          relacion: string | null
+          telefono: string
+          telefono2: string | null
+          updated_at: string
+        }
+        Insert: {
+          cargo?: string | null
+          cedula: string
+          cliente_id?: string | null
+          created_at?: string
+          direccion?: string | null
+          email?: string | null
+          estado?: string | null
+          id?: string
+          ingreso_mensual?: number | null
+          lugar_trabajo?: string | null
+          nombre_completo: string
+          notas?: string | null
+          prestamo_id?: string | null
+          relacion?: string | null
+          telefono: string
+          telefono2?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cargo?: string | null
+          cedula?: string
+          cliente_id?: string | null
+          created_at?: string
+          direccion?: string | null
+          email?: string | null
+          estado?: string | null
+          id?: string
+          ingreso_mensual?: number | null
+          lugar_trabajo?: string | null
+          nombre_completo?: string
+          notas?: string | null
+          prestamo_id?: string | null
+          relacion?: string | null
+          telefono?: string
+          telefono2?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garantes_personales_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "garantes_personales_prestamo_id_fkey"
+            columns: ["prestamo_id"]
+            isOneToOne: false
+            referencedRelation: "prestamos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      garantia_documentos: {
+        Row: {
+          created_at: string
+          garantia_id: string
+          id: string
+          nombre: string
+          tipo: string | null
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          garantia_id: string
+          id?: string
+          nombre?: string
+          tipo?: string | null
+          url: string
+        }
+        Update: {
+          created_at?: string
+          garantia_id?: string
+          id?: string
+          nombre?: string
+          tipo?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garantia_documentos_garantia_id_fkey"
+            columns: ["garantia_id"]
+            isOneToOne: false
+            referencedRelation: "garantias_prendarias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      garantias_prendarias: {
+        Row: {
+          anio: number | null
+          cliente_id: string | null
+          color: string | null
+          created_at: string
+          descripcion: string
+          estado: string | null
+          id: string
+          marca: string | null
+          modelo: string | null
+          notas: string | null
+          numero_chasis: string | null
+          numero_matricula: string | null
+          numero_placa: string | null
+          numero_serie: string | null
+          numero_titulo: string | null
+          prestamo_id: string | null
+          tipo: string
+          ubicacion: string | null
+          updated_at: string
+          valor_estimado: number | null
+        }
+        Insert: {
+          anio?: number | null
+          cliente_id?: string | null
+          color?: string | null
+          created_at?: string
+          descripcion?: string
+          estado?: string | null
+          id?: string
+          marca?: string | null
+          modelo?: string | null
+          notas?: string | null
+          numero_chasis?: string | null
+          numero_matricula?: string | null
+          numero_placa?: string | null
+          numero_serie?: string | null
+          numero_titulo?: string | null
+          prestamo_id?: string | null
+          tipo?: string
+          ubicacion?: string | null
+          updated_at?: string
+          valor_estimado?: number | null
+        }
+        Update: {
+          anio?: number | null
+          cliente_id?: string | null
+          color?: string | null
+          created_at?: string
+          descripcion?: string
+          estado?: string | null
+          id?: string
+          marca?: string | null
+          modelo?: string | null
+          notas?: string | null
+          numero_chasis?: string | null
+          numero_matricula?: string | null
+          numero_placa?: string | null
+          numero_serie?: string | null
+          numero_titulo?: string | null
+          prestamo_id?: string | null
+          tipo?: string
+          ubicacion?: string | null
+          updated_at?: string
+          valor_estimado?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garantias_prendarias_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "garantias_prendarias_prestamo_id_fkey"
+            columns: ["prestamo_id"]
+            isOneToOne: false
+            referencedRelation: "prestamos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gastos_prestamo: {
         Row: {
           created_at: string
