@@ -8,6 +8,7 @@ import {
   BarChart3,
   DollarSign,
   LogOut,
+  Settings,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
@@ -33,6 +34,7 @@ const navItems = [
   { title: 'Cobranza', url: '/cobranza', icon: Receipt },
   { title: 'Garantías', url: '/garantias', icon: ShieldCheck },
   { title: 'Reportes', url: '/reportes', icon: BarChart3 },
+  { title: 'Ajustes', url: '/ajustes', icon: Settings },
 ];
 
 export function AppSidebar() {

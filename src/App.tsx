@@ -13,6 +13,7 @@ import Prestamos from "./pages/Prestamos";
 import Cobranza from "./pages/Cobranza";
 import Garantias from "./pages/Garantias";
 import Reportes from "./pages/Reportes";
+import Ajustes from "./pages/Ajustes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const AppRoutes = () => (
     <Route path="/cobranza" element={<ProtectedRoute><Cobranza /></ProtectedRoute>} />
     <Route path="/garantias" element={<ProtectedRoute><Garantias /></ProtectedRoute>} />
     <Route path="/reportes" element={<ProtectedRoute><Reportes /></ProtectedRoute>} />
+    <Route path="/ajustes" element={<ProtectedRoute><Ajustes /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
