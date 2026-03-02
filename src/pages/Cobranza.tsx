@@ -7,10 +7,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Search, AlertTriangle, Clock, CalendarCheck, Receipt,
-  DollarSign, Loader2, Phone,
+  DollarSign, Loader2, Phone, Banknote,
 } from 'lucide-react';
 import { useCobranza, useResumenCobranza, type VistaCobranza, type CuotaCobranza } from '@/hooks/useCobranza';
 import { PagoRapidoDialog } from '@/components/PagoRapidoDialog';
+import { SaldarPrestamoDialog } from '@/components/SaldarPrestamoDialog';
 import { formatCurrency, formatDate } from '@/lib/format';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -68,6 +69,11 @@ export default function Cobranza() {
   const [vista, setVista]           = useState<VistaCobranza>('vencidas');
   const [search, setSearch]         = useState('');
   const [cuotaPago, setCuotaPago]   = useState<CuotaCobranza | null>(null);
+  const [saldarInfo, setSaldarInfo] = useState<{
+    prestamoId: string;
+    numeroPrestamo: string;
+    clienteNombre: string;
+  } | null>(null);
 
   const { data: cuotas, isLoading } = useCobranza(vista, search);
   const { data: resumen }           = useResumenCobranza();
@@ -216,15 +222,32 @@ export default function Cobranza() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="gap-1.5 h-7 text-xs"
-                          onClick={() => setCuotaPago(c)}
-                        >
-                          <DollarSign className="h-3.5 w-3.5" />
-                          Cobrar
-                        </Button>
+                        <div className="flex gap-1 justify-end">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1.5 h-7 text-xs"
+                            onClick={() => setCuotaPago(c)}
+                          >
+                            <DollarSign className="h-3.5 w-3.5" />
+                            Cobrar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="default"
+                            className="gap-1.5 h-7 text-xs"
+                            onClick={() => setSaldarInfo({
+                              prestamoId: c.prestamo_id,
+                              numeroPrestamo: pre?.numero_prestamo ?? '—',
+                              clienteNombre: cliente
+                                ? `${cliente.primer_nombre} ${cliente.primer_apellido}`
+                                : '—',
+                            })}
+                          >
+                            <Banknote className="h-3.5 w-3.5" />
+                            Saldar
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -237,6 +260,14 @@ export default function Cobranza() {
 
       {/* Pago rápido modal */}
       <PagoRapidoDialog cuota={cuotaPago} onClose={() => setCuotaPago(null)} />
+
+      {/* Saldar préstamo modal */}
+      <SaldarPrestamoDialog
+        prestamoId={saldarInfo?.prestamoId ?? null}
+        numeroPrestamo={saldarInfo?.numeroPrestamo}
+        clienteNombre={saldarInfo?.clienteNombre}
+        onClose={() => setSaldarInfo(null)}
+      />
     </div>
   );
 }
