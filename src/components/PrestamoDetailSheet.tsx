@@ -7,9 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, DollarSign } from 'lucide-react';
+import { Loader2, DollarSign, FileDown } from 'lucide-react';
 import { usePrestamo, useCuotas, usePagos, useRegistrarPago, type Cuota } from '@/hooks/usePrestamos';
 import { formatCurrency, formatDate } from '@/lib/format';
+import { generarContratoPDF } from '@/lib/contratoPDF';
+import { calcAmortizacion, totalCuotas } from '@/lib/amortizacion';
 
 const estadoBadge: Record<string, string> = {
   pendiente: 'bg-warning/10 text-warning border-warning/20',
@@ -103,9 +105,45 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
                       </p>
                     )}
                   </div>
-                  <Badge variant="outline" className={estadoPreBadge[prestamo.estado] ?? ''}>
-                    {prestamo.estado.replace('_', ' ')}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 h-8 text-xs"
+                      onClick={() => {
+                        const cuotaCalc = calcAmortizacion(
+                          prestamo.monto_aprobado,
+                          prestamo.tasa_interes / 100,
+                          prestamo.plazo_meses,
+                          prestamo.frecuencia_pago,
+                          prestamo.metodo_amortizacion,
+                          new Date(prestamo.fecha_desembolso),
+                        );
+                        generarContratoPDF({
+                          numero_prestamo: prestamo.numero_prestamo,
+                          cliente_nombre: cliente ? `${cliente.primer_nombre} ${cliente.primer_apellido}` : 'Cliente',
+                          cliente_cedula: cliente?.cedula ?? '',
+                          cliente_direccion: cliente?.direccion ?? '',
+                          cliente_telefono: cliente?.telefono ?? '',
+                          monto_aprobado: prestamo.monto_aprobado,
+                          tasa_interes: prestamo.tasa_interes,
+                          plazo_meses: prestamo.plazo_meses,
+                          frecuencia_pago: prestamo.frecuencia_pago,
+                          metodo_amortizacion: prestamo.metodo_amortizacion,
+                          fecha_desembolso: prestamo.fecha_desembolso,
+                          fecha_vencimiento: prestamo.fecha_vencimiento ?? '',
+                          cuota_estimada: cuotaCalc[0]?.monto_cuota ?? 0,
+                          total_cuotas: totalCuotas(prestamo.plazo_meses, prestamo.frecuencia_pago),
+                        });
+                      }}
+                    >
+                      <FileDown className="h-3.5 w-3.5" />
+                      Contrato PDF
+                    </Button>
+                    <Badge variant="outline" className={estadoPreBadge[prestamo.estado] ?? ''}>
+                      {prestamo.estado.replace('_', ' ')}
+                    </Badge>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                   <div>
