@@ -42,6 +42,7 @@ export interface Cuota {
   interes: number;
   saldo_pendiente: number;
   monto_pagado: number;
+  mora: number | null;
   estado: string;
   fecha_pago: string | null;
 }

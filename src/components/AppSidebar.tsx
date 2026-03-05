@@ -9,6 +9,8 @@ import {
   DollarSign,
   LogOut,
   Settings,
+  Wallet,
+  History,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
@@ -34,6 +36,8 @@ const navItems = [
   { title: 'Cobranza', url: '/cobranza', icon: Receipt },
   { title: 'Garantías', url: '/garantias', icon: ShieldCheck },
   { title: 'Reportes', url: '/reportes', icon: BarChart3 },
+  { title: 'Cierre Caja', url: '/cierre-caja', icon: Wallet },
+  { title: 'Bitácora', url: '/bitacora', icon: History },
   { title: 'Ajustes', url: '/ajustes', icon: Settings },
 ];
 

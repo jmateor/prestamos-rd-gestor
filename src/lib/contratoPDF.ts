@@ -16,6 +16,32 @@ export interface ContratoData {
   fecha_vencimiento: string;
   cuota_estimada: number;
   total_cuotas: number;
+  // New: garante & garantia
+  garante?: {
+    nombre_completo: string;
+    cedula: string;
+    telefono: string;
+    direccion: string;
+    relacion: string;
+  } | null;
+  garantia?: {
+    tipo: string;
+    descripcion: string;
+    marca?: string;
+    modelo?: string;
+    valor_estimado?: number;
+    numero_placa?: string;
+    numero_chasis?: string;
+  } | null;
+  // Cronograma de cuotas
+  cuotas?: {
+    numero_cuota: number;
+    fecha_vencimiento: string;
+    capital: number;
+    interes: number;
+    monto_cuota: number;
+    saldo_pendiente: number;
+  }[];
 }
 
 const frecLabel: Record<string, string> = {
@@ -35,9 +61,14 @@ function formatDateLong(d: string) {
 export function generarContratoPDF(data: ContratoData) {
   const doc = new jsPDF({ unit: 'mm', format: 'letter' });
   const pw = doc.internal.pageSize.getWidth();
+  const ph = doc.internal.pageSize.getHeight();
   const margin = 20;
   const maxW = pw - margin * 2;
   let y = 25;
+
+  const checkPage = (need: number) => {
+    if (y + need > ph - 20) { doc.addPage(); y = 25; }
+  };
 
   // ── Header ───────────────────────────────────────────────
   doc.setFontSize(16);
@@ -49,7 +80,6 @@ export function generarContratoPDF(data: ContratoData) {
   doc.text(`Nro. ${data.numero_prestamo}`, pw / 2, y, { align: 'center' });
   y += 10;
 
-  // ── Line ─────────────────────────────────────────────────
   doc.setDrawColor(100);
   doc.line(margin, y, pw - margin, y);
   y += 8;
@@ -68,6 +98,7 @@ export function generarContratoPDF(data: ContratoData) {
   y += partesLines.length * 5 + 6;
 
   // ── Condiciones ──────────────────────────────────────────
+  checkPage(60);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.text('CONDICIONES DEL PRÉSTAMO', margin, y);
@@ -97,7 +128,62 @@ export function generarContratoPDF(data: ContratoData) {
   }
   y += 4;
 
+  // ── Garante ──────────────────────────────────────────────
+  if (data.garante) {
+    checkPage(40);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('GARANTE PERSONAL', margin, y);
+    y += 7;
+    doc.setFontSize(10);
+
+    const gInfo = [
+      ['Nombre:', data.garante.nombre_completo],
+      ['Cédula:', data.garante.cedula],
+      ['Teléfono:', data.garante.telefono],
+      ['Dirección:', data.garante.direccion || '—'],
+      ['Relación:', data.garante.relacion || '—'],
+    ];
+    for (const [l, v] of gInfo) {
+      doc.setFont('helvetica', 'bold');
+      doc.text(l, margin + 4, y);
+      doc.setFont('helvetica', 'normal');
+      doc.text(v, margin + 40, y);
+      y += 6;
+    }
+    y += 4;
+  }
+
+  // ── Garantía Prendaria ───────────────────────────────────
+  if (data.garantia) {
+    checkPage(40);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('GARANTÍA PRENDARIA', margin, y);
+    y += 7;
+    doc.setFontSize(10);
+
+    const gaInfo: [string, string][] = [
+      ['Tipo:', data.garantia.tipo],
+      ['Descripción:', data.garantia.descripcion],
+    ];
+    if (data.garantia.marca) gaInfo.push(['Marca/Modelo:', `${data.garantia.marca} ${data.garantia.modelo ?? ''}`]);
+    if (data.garantia.numero_placa) gaInfo.push(['Placa:', data.garantia.numero_placa]);
+    if (data.garantia.numero_chasis) gaInfo.push(['Chasis:', data.garantia.numero_chasis]);
+    if (data.garantia.valor_estimado) gaInfo.push(['Valor Estimado:', formatCurrency(data.garantia.valor_estimado)]);
+
+    for (const [l, v] of gaInfo) {
+      doc.setFont('helvetica', 'bold');
+      doc.text(l, margin + 4, y);
+      doc.setFont('helvetica', 'normal');
+      doc.text(v, margin + 45, y);
+      y += 6;
+    }
+    y += 4;
+  }
+
   // ── Cláusulas ────────────────────────────────────────────
+  checkPage(30);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.text('CLÁUSULAS', margin, y);
@@ -116,48 +202,101 @@ export function generarContratoPDF(data: ContratoData) {
     `SÉPTIMA: Para todos los efectos del presente contrato, las partes eligen como domicilio la ciudad donde se otorga el mismo, sometiéndose a la jurisdicción de los tribunales competentes de la República Dominicana.`,
   ];
 
-  for (let i = 0; i < clausulas.length; i++) {
-    const lines = doc.splitTextToSize(clausulas[i], maxW - 4);
-    if (y + lines.length * 4.5 > 260) {
-      doc.addPage();
-      y = 25;
-    }
+  if (data.garante) {
+    clausulas.push(`OCTAVA: ${data.garante.nombre_completo}, portador(a) de la cédula No. ${data.garante.cedula}, se constituye como GARANTE SOLIDARIO del presente préstamo, obligándose al cumplimiento total de las obligaciones aquí pactadas en caso de incumplimiento del PRESTATARIO.`);
+  }
+
+  if (data.garantia) {
+    clausulas.push(`${data.garante ? 'NOVENA' : 'OCTAVA'}: EL PRESTATARIO deja en garantía prendaria el bien descrito como "${data.garantia.descripcion}" (${data.garantia.tipo}), con valor estimado de ${data.garantia.valor_estimado ? formatCurrency(data.garantia.valor_estimado) : 'no especificado'}, el cual no podrá ser enajenado ni gravado mientras subsista la deuda.`);
+  }
+
+  for (const c of clausulas) {
+    const lines = doc.splitTextToSize(c, maxW - 4);
+    checkPage(lines.length * 4.5 + 3);
     doc.text(lines, margin + 2, y);
     y += lines.length * 4.5 + 3;
   }
 
-  // ── Firmas ───────────────────────────────────────────────
-  y = Math.max(y + 10, 220);
-  if (y > 240) {
+  // ── Cronograma de Pagos ──────────────────────────────────
+  if (data.cuotas && data.cuotas.length > 0) {
     doc.addPage();
-    y = 60;
+    y = 25;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CRONOGRAMA DE PAGOS', pw / 2, y, { align: 'center' });
+    y += 8;
+
+    const cols = [
+      { label: '#', x: margin },
+      { label: 'Fecha', x: margin + 12 },
+      { label: 'Capital', x: margin + 42 },
+      { label: 'Interés', x: margin + 72 },
+      { label: 'Cuota', x: margin + 100 },
+      { label: 'Saldo', x: margin + 130 },
+    ];
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setFillColor(230, 230, 230);
+    doc.rect(margin, y - 3, maxW, 6, 'F');
+    cols.forEach((c) => doc.text(c.label, c.x + 1, y));
+    y += 5;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+
+    for (const cuota of data.cuotas) {
+      if (y > ph - 20) { doc.addPage(); y = 25; }
+      const fv = new Date(cuota.fecha_vencimiento).toLocaleDateString('es-DO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      doc.text(String(cuota.numero_cuota), cols[0].x + 1, y);
+      doc.text(fv, cols[1].x + 1, y);
+      doc.text(formatCurrency(cuota.capital), cols[2].x + 1, y);
+      doc.text(formatCurrency(cuota.interes), cols[3].x + 1, y);
+      doc.text(formatCurrency(cuota.monto_cuota), cols[4].x + 1, y);
+      doc.text(formatCurrency(cuota.saldo_pendiente), cols[5].x + 1, y);
+      y += 4.5;
+    }
   }
+
+  // ── Firmas ───────────────────────────────────────────────
+  checkPage(50);
+  y = Math.max(y + 15, 200);
+  if (y > ph - 50) { doc.addPage(); y = 60; }
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
 
   const firmaY = y + 15;
-  // Prestamista
   doc.line(margin, firmaY, margin + 65, firmaY);
   doc.text('EL PRESTAMISTA', margin + 10, firmaY + 5);
   doc.text('JBM RD Préstamos', margin + 8, firmaY + 10);
 
-  // Prestatario
   doc.line(pw - margin - 65, firmaY, pw - margin, firmaY);
   doc.text('EL PRESTATARIO', pw - margin - 55, firmaY + 5);
   doc.text(data.cliente_nombre, pw - margin - 60, firmaY + 10);
   doc.setFontSize(8);
   doc.text(`Cédula: ${data.cliente_cedula}`, pw - margin - 60, firmaY + 14);
 
-  // ── Fecha ────────────────────────────────────────────────
+  // Garante signature
+  if (data.garante) {
+    const gFirmaY = firmaY + 25;
+    checkPage(30);
+    doc.line(pw / 2 - 32, gFirmaY, pw / 2 + 32, gFirmaY);
+    doc.setFontSize(10);
+    doc.text('EL GARANTE', pw / 2, gFirmaY + 5, { align: 'center' });
+    doc.text(data.garante.nombre_completo, pw / 2, gFirmaY + 10, { align: 'center' });
+    doc.setFontSize(8);
+    doc.text(`Cédula: ${data.garante.cedula}`, pw / 2, gFirmaY + 14, { align: 'center' });
+  }
+
+  // Date
   doc.setFontSize(9);
+  const footerY = data.garante ? firmaY + 45 : firmaY + 25;
   doc.text(
     `Firmado en ________________, República Dominicana, a los ${formatDateLong(data.fecha_desembolso)}.`,
     pw / 2,
-    firmaY + 25,
+    Math.min(footerY, ph - 15),
     { align: 'center' },
   );
 
-  // Save
   doc.save(`Contrato_${data.numero_prestamo}.pdf`);
 }
