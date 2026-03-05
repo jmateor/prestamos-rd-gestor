@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          accion: string
+          created_at: string
+          datos_anteriores: Json | null
+          datos_nuevos: Json | null
+          id: string
+          notas: string | null
+          registro_id: string | null
+          tabla: string
+          user_id: string
+        }
+        Insert: {
+          accion: string
+          created_at?: string
+          datos_anteriores?: Json | null
+          datos_nuevos?: Json | null
+          id?: string
+          notas?: string | null
+          registro_id?: string | null
+          tabla: string
+          user_id: string
+        }
+        Update: {
+          accion?: string
+          created_at?: string
+          datos_anteriores?: Json | null
+          datos_nuevos?: Json | null
+          id?: string
+          notas?: string | null
+          registro_id?: string | null
+          tabla?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       autorizaciones: {
         Row: {
           created_at: string
@@ -99,6 +135,65 @@ export type Database = {
           usuario_id?: string | null
         }
         Relationships: []
+      }
+      cierres_caja: {
+        Row: {
+          caja_id: string | null
+          cerrado_at: string | null
+          created_at: string
+          diferencia: number
+          estado: string
+          fecha: string
+          id: string
+          monto_apertura: number
+          monto_cierre: number
+          notas: string | null
+          total_cheques: number
+          total_efectivo: number
+          total_transferencias: number
+          usuario_id: string
+        }
+        Insert: {
+          caja_id?: string | null
+          cerrado_at?: string | null
+          created_at?: string
+          diferencia?: number
+          estado?: string
+          fecha?: string
+          id?: string
+          monto_apertura?: number
+          monto_cierre?: number
+          notas?: string | null
+          total_cheques?: number
+          total_efectivo?: number
+          total_transferencias?: number
+          usuario_id: string
+        }
+        Update: {
+          caja_id?: string | null
+          cerrado_at?: string | null
+          created_at?: string
+          diferencia?: number
+          estado?: string
+          fecha?: string
+          id?: string
+          monto_apertura?: number
+          monto_cierre?: number
+          notas?: string | null
+          total_cheques?: number
+          total_efectivo?: number
+          total_transferencias?: number
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cierres_caja_caja_id_fkey"
+            columns: ["caja_id"]
+            isOneToOne: false
+            referencedRelation: "cajas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       clientes: {
         Row: {
