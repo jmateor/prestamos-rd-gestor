@@ -81,15 +81,8 @@ export function PagoRapidoDialog({ cuota, onClose }: Props) {
       saldo_total_pendiente: Math.max(0, saldoPendiente),
     });
 
-    // Open in new window for printing
-    const pdfBlob = doc.output('blob');
-    const url = URL.createObjectURL(pdfBlob);
-    const win = window.open(url, '_blank');
-    if (win) {
-      win.addEventListener('load', () => {
-        win.print();
-      });
-    }
+    // Download PDF directly
+    doc.save(`recibo-pago-${pre?.numero_prestamo ?? 'pago'}-cuota${cuota.numero_cuota}.pdf`);
   };
 
   const handleSubmit = async () => {
