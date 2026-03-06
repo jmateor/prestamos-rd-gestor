@@ -82,7 +82,7 @@ export function PagoRapidoDialog({ cuota, onClose }: Props) {
     });
 
     // Download PDF directly
-    doc.save(`recibo-pago-${data.numero_prestamo}-cuota${data.numero_cuota}.pdf`);
+    doc.save(`recibo-pago-${pre?.numero_prestamo ?? 'pago'}-cuota${cuota.numero_cuota}.pdf`);
   };
 
   const handleSubmit = async () => {
