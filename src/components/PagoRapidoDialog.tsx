@@ -3,9 +3,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, DollarSign } from 'lucide-react';
+import { Loader2, DollarSign, Printer } from 'lucide-react';
 import { useRegistrarPago } from '@/hooks/usePrestamos';
 import { formatCurrency, formatDate } from '@/lib/format';
+import { generarReciboPago } from '@/lib/reciboPagoPDF';
+import { supabase } from '@/integrations/supabase/client';
 import type { CuotaCobranza } from '@/hooks/useCobranza';
 
 interface Props {
@@ -35,16 +37,74 @@ export function PagoRapidoDialog({ cuota, onClose }: Props) {
     prevCuotaId[1](null);
   }
 
+  const imprimirRecibo = async (montoPagado: number) => {
+    if (!cuota) return;
+    const pre = cuota.prestamos;
+    const cliente = pre?.clientes;
+
+    // Fetch updated cuotas to calculate remaining balance
+    const { data: cuotasActualizadas } = await supabase
+      .from('cuotas')
+      .select('monto_cuota, monto_pagado, estado')
+      .eq('prestamo_id', cuota.prestamo_id)
+      .order('numero_cuota');
+
+    const cuotasPendientes = cuotasActualizadas?.filter(c => c.estado !== 'pagada') ?? [];
+    const saldoPendiente = cuotasActualizadas?.reduce(
+      (acc, c) => acc + (c.monto_cuota - c.monto_pagado), 0
+    ) ?? 0;
+
+    // Fetch monto_aprobado
+    const { data: prestamo } = await supabase
+      .from('prestamos')
+      .select('monto_aprobado')
+      .eq('id', cuota.prestamo_id)
+      .maybeSingle();
+
+    const nuevoAcumulado = cuota.monto_pagado + montoPagado;
+
+    const doc = generarReciboPago({
+      monto_pagado: montoPagado,
+      fecha_pago: form.fecha,
+      metodo_pago: form.metodo,
+      referencia: form.referencia,
+      numero_cuota: cuota.numero_cuota,
+      monto_cuota: cuota.monto_cuota,
+      monto_pagado_acumulado: nuevoAcumulado,
+      numero_prestamo: pre?.numero_prestamo ?? '—',
+      monto_aprobado: prestamo?.monto_aprobado ?? 0,
+      cliente_nombre: cliente
+        ? `${cliente.primer_nombre} ${cliente.primer_apellido}`
+        : '—',
+      cliente_cedula: cliente?.cedula ?? '—',
+      cuotas_restantes: cuotasPendientes.length,
+      saldo_total_pendiente: Math.max(0, saldoPendiente),
+    });
+
+    // Open in new window for printing
+    const pdfBlob = doc.output('blob');
+    const url = URL.createObjectURL(pdfBlob);
+    const win = window.open(url, '_blank');
+    if (win) {
+      win.addEventListener('load', () => {
+        win.print();
+      });
+    }
+  };
+
   const handleSubmit = async () => {
     if (!cuota || !form.monto) return;
+    const montoPagado = parseFloat(form.monto);
     await registrar.mutateAsync({
       prestamo_id: cuota.prestamo_id,
       cuota_id: cuota.id,
-      monto_pagado: parseFloat(form.monto),
+      monto_pagado: montoPagado,
       fecha_pago: form.fecha,
       metodo_pago: form.metodo,
       referencia: form.referencia,
     });
+    // Generate and print receipt
+    await imprimirRecibo(montoPagado);
     onClose();
   };
 
@@ -140,7 +200,7 @@ export function PagoRapidoDialog({ cuota, onClose }: Props) {
               >
                 {registrar.isPending
                   ? <><Loader2 className="h-4 w-4 animate-spin" /> Registrando...</>
-                  : <><DollarSign className="h-4 w-4" /> Registrar</>}
+                  : <><Printer className="h-4 w-4" /> Cobrar e Imprimir</>}
               </Button>
             </div>
           </div>
