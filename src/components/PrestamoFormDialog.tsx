@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,12 +10,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Plus, Loader2 } from 'lucide-react';
 import { useCreatePrestamo } from '@/hooks/usePrestamos';
-import { useClientes } from '@/hooks/useClientes';
 import { calcAmortizacion, totalCuotas } from '@/lib/amortizacion';
 import { formatCurrency } from '@/lib/format';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const schema = z.object({
-  cliente_id:          z.string().min(1, 'Seleccione un cliente'),
+  solicitud_id:        z.string().optional(),
+  cliente_id:          z.string().min(1, 'Seleccione una solicitud'),
   monto_aprobado:      z.coerce.number().min(1, 'Monto requerido'),
   tasa_interes:        z.coerce.number().min(0).max(100),
   plazo_meses:         z.coerce.number().int().min(1),
@@ -27,15 +29,43 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+/** Fetch approved solicitudes that have NOT been disbursed yet */
+function useSolicitudesAprobadas() {
+  return useQuery({
+    queryKey: ['solicitudes-aprobadas-pendientes'],
+    queryFn: async () => {
+      // Get approved solicitudes
+      const { data: solicitudes, error: se } = await supabase
+        .from('solicitudes')
+        .select('*, clientes(primer_nombre, primer_apellido, cedula, telefono)')
+        .eq('estado', 'aprobada')
+        .order('created_at', { ascending: false });
+      if (se) throw se;
+
+      // Get solicitud_ids that already have a prestamo
+      const { data: prestamos, error: pe } = await supabase
+        .from('prestamos')
+        .select('solicitud_id')
+        .not('solicitud_id', 'is', null);
+      if (pe) throw pe;
+
+      const disbursedIds = new Set((prestamos ?? []).map((p) => p.solicitud_id));
+
+      // Filter out already disbursed
+      return (solicitudes ?? []).filter((s) => !disbursedIds.has(s.id));
+    },
+  });
+}
+
 export function PrestamoFormDialog() {
   const [open, setOpen] = useState(false);
-  const [clienteSearch, setClienteSearch] = useState('');
   const createPrestamo = useCreatePrestamo();
-  const { data: clientes, isLoading: loadingClientes } = useClientes(clienteSearch);
+  const { data: solicitudes, isLoading: loadingSolicitudes } = useSolicitudesAprobadas();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
+      solicitud_id: '',
       cliente_id: '',
       monto_aprobado: 0,
       tasa_interes: 5,
@@ -48,6 +78,20 @@ export function PrestamoFormDialog() {
   });
 
   const watched = form.watch();
+  const selectedSolicitudId = form.watch('solicitud_id');
+
+  // Auto-fill fields when a solicitud is selected
+  useEffect(() => {
+    if (!selectedSolicitudId || !solicitudes) return;
+    const sol = solicitudes.find((s) => s.id === selectedSolicitudId);
+    if (!sol) return;
+
+    form.setValue('cliente_id', sol.cliente_id);
+    form.setValue('monto_aprobado', sol.monto_solicitado);
+    form.setValue('plazo_meses', sol.plazo_meses);
+    form.setValue('frecuencia_pago', sol.frecuencia_pago);
+    form.setValue('tasa_interes', sol.tasa_interes_sugerida ?? 5);
+  }, [selectedSolicitudId, solicitudes]);
 
   // Preview first cuota
   const preview = (() => {
@@ -68,6 +112,7 @@ export function PrestamoFormDialog() {
 
   const onSubmit = async (values: FormValues) => {
     await createPrestamo.mutateAsync({
+      solicitud_id:        values.solicitud_id || undefined,
       cliente_id:          values.cliente_id,
       monto_aprobado:      values.monto_aprobado,
       tasa_interes:        values.tasa_interes,
@@ -80,6 +125,9 @@ export function PrestamoFormDialog() {
     form.reset();
     setOpen(false);
   };
+
+  const selectedSol = solicitudes?.find((s) => s.id === selectedSolicitudId);
+  const cliente = selectedSol?.clientes as any;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -96,36 +144,50 @@ export function PrestamoFormDialog() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 
-            {/* Cliente */}
-            <FormField control={form.control} name="cliente_id" render={({ field }) => (
+            {/* Solicitud Selector */}
+            <FormField control={form.control} name="solicitud_id" render={({ field }) => (
               <FormItem>
-                <FormLabel>Cliente *</FormLabel>
-                <div className="space-y-2">
-                  <Input
-                    placeholder="Buscar cliente..."
-                    value={clienteSearch}
-                    onChange={(e) => setClienteSearch(e.target.value)}
-                  />
-                  {loadingClientes
-                    ? <div className="flex justify-center py-2"><Loader2 className="h-4 w-4 animate-spin" /></div>
-                    : clientes && clientes.length > 0
-                      ? (
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar cliente" /></SelectTrigger></FormControl>
-                          <SelectContent>
-                            {clientes.map((c) => (
-                              <SelectItem key={c.id} value={c.id}>
-                                {c.primer_nombre} {c.primer_apellido} — {c.cedula}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )
-                      : <p className="text-sm text-muted-foreground">Sin clientes. Registre uno primero.</p>}
-                </div>
+                <FormLabel>Solicitud Aprobada *</FormLabel>
+                {loadingSolicitudes ? (
+                  <div className="flex justify-center py-2"><Loader2 className="h-4 w-4 animate-spin" /></div>
+                ) : solicitudes && solicitudes.length > 0 ? (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger><SelectValue placeholder="Seleccionar solicitud aprobada" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {solicitudes.map((s) => {
+                        const cl = s.clientes as any;
+                        return (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.numero_solicitud} — {cl ? `${cl.primer_nombre} ${cl.primer_apellido}` : 'Sin cliente'} — {formatCurrency(s.monto_solicitado)}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No hay solicitudes aprobadas pendientes de desembolso.</p>
+                )}
                 <FormMessage />
               </FormItem>
             )} />
+
+            {/* Cliente info card */}
+            {cliente && (
+              <div className="rounded-md border bg-muted/30 p-3 text-sm space-y-1">
+                <p className="font-medium text-foreground">
+                  {cliente.primer_nombre} {cliente.primer_apellido}
+                </p>
+                <div className="grid grid-cols-2 gap-1 text-muted-foreground">
+                  <span>Cédula: {cliente.cedula}</span>
+                  <span>Tel: {cliente.telefono}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Hidden cliente_id */}
+            <input type="hidden" {...form.register('cliente_id')} />
 
             <div className="grid grid-cols-2 gap-3">
               <FormField control={form.control} name="monto_aprobado" render={({ field }) => (
@@ -206,7 +268,7 @@ export function PrestamoFormDialog() {
 
             <div className="flex justify-end gap-2 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-              <Button type="submit" disabled={createPrestamo.isPending}>
+              <Button type="submit" disabled={createPrestamo.isPending || !selectedSolicitudId}>
                 {createPrestamo.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Creando...</> : 'Desembolsar'}
               </Button>
             </div>
