@@ -10,8 +10,12 @@ export function useReporteCartera() {
         .from('prestamos')
         .select(`
           id, numero_prestamo, monto_aprobado, estado,
-          fecha_desembolso, fecha_vencimiento,
-          clientes(primer_nombre, primer_apellido, cedula)
+          fecha_desembolso, fecha_vencimiento, frecuencia_pago,
+          tasa_interes, plazo_meses, oficial_credito_id,
+          zona_id, cobrador_id,
+          clientes(primer_nombre, primer_apellido, cedula, telefono),
+          zonas(nombre),
+          cobradores(nombre)
         `)
         .in('estado', ['activo', 'en_mora'])
         .order('estado')
@@ -29,7 +33,7 @@ export function useReporteClientesNuevos(desde: string, hasta: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('clientes')
-        .select('id, primer_nombre, primer_apellido, cedula, telefono, created_at, estado')
+        .select('id, primer_nombre, primer_apellido, cedula, telefono, created_at, estado, provincia, ciudad')
         .gte('created_at', desde)
         .lte('created_at', hasta + 'T23:59:59')
         .order('created_at', { ascending: false });
@@ -47,9 +51,11 @@ export function useReporteIngresos(desde: string, hasta: string) {
       const { data, error } = await supabase
         .from('pagos')
         .select(`
-          id, monto_pagado, fecha_pago, metodo_pago,
-          prestamos(numero_prestamo, tasa_interes,
-            clientes(primer_nombre, primer_apellido))
+          id, monto_pagado, fecha_pago, metodo_pago, capital_pagado, interes_pagado, mora_pagada,
+          prestamos(numero_prestamo, tasa_interes, oficial_credito_id, zona_id, cobrador_id,
+            clientes(primer_nombre, primer_apellido, cedula),
+            zonas(nombre),
+            cobradores(nombre))
         `)
         .gte('fecha_pago', desde)
         .lte('fecha_pago', hasta)
@@ -69,7 +75,10 @@ export function useReportePagosDia(fecha: string) {
         .from('pagos')
         .select(`
           id, monto_pagado, fecha_pago, metodo_pago, referencia,
-          prestamos(numero_prestamo, clientes(primer_nombre, primer_apellido))
+          prestamos(numero_prestamo, oficial_credito_id, zona_id, cobrador_id,
+            clientes(primer_nombre, primer_apellido, cedula),
+            zonas(nombre),
+            cobradores(nombre))
         `)
         .eq('fecha_pago', fecha)
         .order('created_at', { ascending: false });
@@ -89,8 +98,10 @@ export function useReporteMorosidad() {
         .from('cuotas')
         .select(`
           id, numero_cuota, fecha_vencimiento, monto_cuota, monto_pagado, estado,
-          prestamos(numero_prestamo, monto_aprobado,
-            clientes(primer_nombre, primer_apellido, cedula, telefono))
+          prestamos(numero_prestamo, monto_aprobado, oficial_credito_id, zona_id, cobrador_id,
+            clientes(primer_nombre, primer_apellido, cedula, telefono),
+            zonas(nombre),
+            cobradores(nombre))
         `)
         .lt('fecha_vencimiento', today)
         .neq('estado', 'pagada')
@@ -131,6 +142,42 @@ export function useReporteFrecuencia() {
         grupos[k].monto += Number(p.monto_aprobado);
       }
       return Object.entries(grupos).map(([frecuencia, v]) => ({ frecuencia, ...v }));
+    },
+  });
+}
+
+// ── Zonas list ────────────────────────────────────────────────────────────────
+export function useZonas() {
+  return useQuery({
+    queryKey: ['zonas-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('zonas').select('id, nombre').order('nombre');
+      if (error) throw error;
+      return data as { id: string; nombre: string }[];
+    },
+  });
+}
+
+// ── Cobradores list ───────────────────────────────────────────────────────────
+export function useCobradores() {
+  return useQuery({
+    queryKey: ['cobradores-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('cobradores').select('id, nombre').eq('activo', true).order('nombre');
+      if (error) throw error;
+      return data as { id: string; nombre: string }[];
+    },
+  });
+}
+
+// ── Profiles (oficiales) list ─────────────────────────────────────────────────
+export function useOficiales() {
+  return useQuery({
+    queryKey: ['oficiales-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('profiles').select('user_id, full_name').order('full_name');
+      if (error) throw error;
+      return data as { user_id: string; full_name: string }[];
     },
   });
 }
