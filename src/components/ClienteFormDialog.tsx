@@ -40,6 +40,8 @@ const schema = z.object({
   otros_ingresos: z.coerce.number().min(0).default(0),
   antiguedad_laboral: z.string().default(''),
   estado: z.string().default('activo'),
+  banco_nombre: z.string().default(''),
+  numero_cuenta: z.string().default(''),
   notas: z.string().default(''),
 });
 
