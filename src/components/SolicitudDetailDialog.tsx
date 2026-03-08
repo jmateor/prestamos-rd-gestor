@@ -104,6 +104,12 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
               </Badge>
             </div>
 
+            {/* Risk Alert */}
+            {cliente && <ClienteRiskAlert clienteId={solicitud.cliente_id} />}
+
+            {/* Credit Score */}
+            {cliente && <CreditScoreIndicator clienteId={solicitud.cliente_id} compact />}
+
             {/* Cliente info */}
             {cliente && (
               <Card>
