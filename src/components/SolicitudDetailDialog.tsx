@@ -14,6 +14,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { ClienteRiskAlert } from '@/components/ClienteRiskAlert';
+import { CreditScoreIndicator } from '@/components/CreditScoreIndicator';
+import { formatCurrency } from '@/lib/format';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 const estadoBadge: Record<string, { class: string; label: string }> = {
   pendiente: { class: 'bg-warning/10 text-warning border-warning/20', label: 'Pendiente' },
