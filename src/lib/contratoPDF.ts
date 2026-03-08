@@ -7,6 +7,8 @@ export interface ContratoData {
   cliente_cedula: string;
   cliente_direccion: string;
   cliente_telefono: string;
+  cliente_cedula_frontal_url?: string;
+  cliente_cedula_trasera_url?: string;
   monto_aprobado: number;
   tasa_interes: number;
   plazo_meses: number;
