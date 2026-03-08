@@ -198,8 +198,11 @@ export type Database = {
       clientes: {
         Row: {
           antiguedad_laboral: string | null
+          banco_nombre: string | null
           cargo: string | null
           cedula: string
+          cedula_frontal_url: string | null
+          cedula_trasera_url: string | null
           ciudad: string | null
           created_at: string
           created_by: string | null
@@ -215,6 +218,7 @@ export type Database = {
           lugar_trabajo: string | null
           nacionalidad: string | null
           notas: string | null
+          numero_cuenta: string | null
           otros_ingresos: number | null
           primer_apellido: string
           primer_nombre: string
@@ -233,8 +237,11 @@ export type Database = {
         }
         Insert: {
           antiguedad_laboral?: string | null
+          banco_nombre?: string | null
           cargo?: string | null
           cedula: string
+          cedula_frontal_url?: string | null
+          cedula_trasera_url?: string | null
           ciudad?: string | null
           created_at?: string
           created_by?: string | null
@@ -250,6 +257,7 @@ export type Database = {
           lugar_trabajo?: string | null
           nacionalidad?: string | null
           notas?: string | null
+          numero_cuenta?: string | null
           otros_ingresos?: number | null
           primer_apellido: string
           primer_nombre: string
@@ -268,8 +276,11 @@ export type Database = {
         }
         Update: {
           antiguedad_laboral?: string | null
+          banco_nombre?: string | null
           cargo?: string | null
           cedula?: string
+          cedula_frontal_url?: string | null
+          cedula_trasera_url?: string | null
           ciudad?: string | null
           created_at?: string
           created_by?: string | null
@@ -285,6 +296,7 @@ export type Database = {
           lugar_trabajo?: string | null
           nacionalidad?: string | null
           notas?: string | null
+          numero_cuenta?: string | null
           otros_ingresos?: number | null
           primer_apellido?: string
           primer_nombre?: string
@@ -332,6 +344,53 @@ export type Database = {
           nombre?: string
         }
         Relationships: []
+      }
+      conyuges_cliente: {
+        Row: {
+          cargo: string | null
+          cedula: string | null
+          cliente_id: string
+          created_at: string
+          id: string
+          ingreso_mensual: number | null
+          lugar_trabajo: string | null
+          nombre_completo: string
+          notas: string | null
+          telefono: string | null
+        }
+        Insert: {
+          cargo?: string | null
+          cedula?: string | null
+          cliente_id: string
+          created_at?: string
+          id?: string
+          ingreso_mensual?: number | null
+          lugar_trabajo?: string | null
+          nombre_completo: string
+          notas?: string | null
+          telefono?: string | null
+        }
+        Update: {
+          cargo?: string | null
+          cedula?: string | null
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          ingreso_mensual?: number | null
+          lugar_trabajo?: string | null
+          nombre_completo?: string
+          notas?: string | null
+          telefono?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conyuges_cliente_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cuotas: {
         Row: {
@@ -385,6 +444,44 @@ export type Database = {
             columns: ["prestamo_id"]
             isOneToOne: false
             referencedRelation: "prestamos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dependientes_cliente: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          edad: number | null
+          id: string
+          nombre_completo: string
+          notas: string | null
+          parentesco: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          edad?: number | null
+          id?: string
+          nombre_completo: string
+          notas?: string | null
+          parentesco?: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          edad?: number | null
+          id?: string
+          nombre_completo?: string
+          notas?: string | null
+          parentesco?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dependientes_cliente_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
             referencedColumns: ["id"]
           },
         ]
@@ -969,6 +1066,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      referencias_cliente: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          direccion: string | null
+          empresa: string | null
+          id: string
+          nombre_completo: string
+          notas: string | null
+          relacion: string | null
+          telefono: string
+          tipo: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          direccion?: string | null
+          empresa?: string | null
+          id?: string
+          nombre_completo: string
+          notas?: string | null
+          relacion?: string | null
+          telefono?: string
+          tipo?: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          direccion?: string | null
+          empresa?: string | null
+          id?: string
+          nombre_completo?: string
+          notas?: string | null
+          relacion?: string | null
+          telefono?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referencias_cliente_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       solicitudes: {
         Row: {
