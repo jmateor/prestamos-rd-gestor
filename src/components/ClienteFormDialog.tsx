@@ -60,7 +60,7 @@ export function ClienteFormDialog() {
       tipo_vivienda: 'alquilada', tiempo_residencia: '',
       lugar_trabajo: '', cargo: '', direccion_trabajo: '', telefono_trabajo: '',
       ingreso_mensual: 0, otros_ingresos: 0, antiguedad_laboral: '',
-      estado: 'activo', notas: '',
+      estado: 'activo', banco_nombre: '', numero_cuenta: '', notas: '',
     },
   });
 

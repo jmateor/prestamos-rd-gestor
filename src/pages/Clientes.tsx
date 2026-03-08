@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Users, Search, Loader2 } from 'lucide-react';
-import { useClientes } from '@/hooks/useClientes';
+import { useClientes, type Cliente } from '@/hooks/useClientes';
 import { ClienteFormDialog } from '@/components/ClienteFormDialog';
+import { ClienteProfileSheet } from '@/components/ClienteProfileSheet';
 import { formatCurrency } from '@/lib/format';
 
 const estadoBadge: Record<string, string> = {
@@ -16,7 +18,14 @@ const estadoBadge: Record<string, string> = {
 
 export default function Clientes() {
   const [search, setSearch] = useState('');
+  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
   const { data: clientes, isLoading } = useClientes(search);
+
+  const openProfile = (c: Cliente) => {
+    setSelectedCliente(c);
+    setProfileOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -58,7 +67,7 @@ export default function Clientes() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nombre</TableHead>
+                    <TableHead>Cliente</TableHead>
                     <TableHead>Cédula</TableHead>
                     <TableHead>Teléfono</TableHead>
                     <TableHead>Ciudad</TableHead>
@@ -69,13 +78,26 @@ export default function Clientes() {
                 <TableBody>
                   {clientes.map((c) => (
                     <TableRow key={c.id}>
-                      <TableCell className="font-medium">
-                        {c.primer_nombre} {c.primer_apellido}
+                      <TableCell>
+                        <button
+                          className="flex items-center gap-3 text-left hover:underline"
+                          onClick={() => openProfile(c)}
+                        >
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={c.foto || undefined} />
+                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                              {c.primer_nombre[0]}{c.primer_apellido[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium text-primary">
+                            {c.primer_nombre} {c.primer_apellido}
+                          </span>
+                        </button>
                       </TableCell>
                       <TableCell>{c.cedula}</TableCell>
                       <TableCell>{c.telefono}</TableCell>
                       <TableCell>{c.ciudad || '—'}</TableCell>
-                      <TableCell>{formatCurrency(c.ingreso_mensual)}</TableCell>
+                      <TableCell>{formatCurrency(c.ingreso_mensual || 0)}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className={estadoBadge[c.estado] || ''}>
                           {c.estado}
@@ -89,6 +111,12 @@ export default function Clientes() {
           )}
         </CardContent>
       </Card>
+
+      <ClienteProfileSheet
+        cliente={selectedCliente}
+        open={profileOpen}
+        onOpenChange={setProfileOpen}
+      />
     </div>
   );
 }
