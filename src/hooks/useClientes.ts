@@ -38,11 +38,15 @@ export interface Cliente {
   cedula_trasera_url: string;
   banco_nombre: string;
   numero_cuenta: string;
+  credit_score: number | null;
+  nivel_riesgo: string | null;
+  latitud: number | null;
+  longitud: number | null;
   created_at: string;
   updated_at: string;
 }
 
-export type ClienteInsert = Omit<Cliente, 'id' | 'created_at' | 'updated_at' | 'foto' | 'cedula_frontal_url' | 'cedula_trasera_url'>;
+export type ClienteInsert = Omit<Cliente, 'id' | 'created_at' | 'updated_at' | 'foto' | 'cedula_frontal_url' | 'cedula_trasera_url' | 'credit_score' | 'nivel_riesgo'>;
 
 export function useClientes(search?: string) {
   return useQuery({

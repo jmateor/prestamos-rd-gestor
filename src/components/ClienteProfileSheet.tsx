@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Edit, UserCheck, UserX, Trash2, CreditCard, FileText, Users, Briefcase, DollarSign, AlertTriangle, Ban } from 'lucide-react';
+import { Edit, UserCheck, UserX, Trash2, CreditCard, FileText, Users, Briefcase, DollarSign, AlertTriangle, Ban, MapPin } from 'lucide-react';
 import type { Cliente } from '@/hooks/useClientes';
 import { useUpdateCliente, useDeleteCliente } from '@/hooks/useClientes';
 import { useHistorialCliente } from '@/hooks/useHistorialCliente';
@@ -15,6 +15,8 @@ import { formatCurrency, formatDate } from '@/lib/format';
 import { ClienteEditFormDialog } from '@/components/ClienteEditFormDialog';
 import { ClienteDocumentosTab } from '@/components/ClienteDocumentosTab';
 import { ClienteReferenciasTab } from '@/components/ClienteReferenciasTab';
+import { CreditScoreIndicator } from '@/components/CreditScoreIndicator';
+import { ClienteRiskAlert } from '@/components/ClienteRiskAlert';
 
 const estadoBadge: Record<string, string> = {
   activo: 'bg-success/10 text-success border-success/20',
@@ -52,6 +54,22 @@ export function ClienteProfileSheet({ cliente, open, onOpenChange }: Props) {
     onOpenChange(false);
   };
 
+  const captureGeolocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocalización no soportada en este navegador');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        await updateCliente.mutateAsync({
+          id: cliente.id,
+          data: { latitud: pos.coords.latitude, longitud: pos.coords.longitude } as any,
+        });
+      },
+      (err) => alert('Error al obtener ubicación: ' + err.message)
+    );
+  };
+
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
@@ -65,11 +83,20 @@ export function ClienteProfileSheet({ cliente, open, onOpenChange }: Props) {
               <div className="flex-1">
                 <SheetTitle className="text-xl">{fullName}</SheetTitle>
                 <p className="text-sm text-muted-foreground">{cliente.cedula} · {cliente.telefono}</p>
-                <Badge variant="outline" className={`mt-1 ${estadoBadge[cliente.estado] || ''}`}>
-                  {cliente.estado}
-                </Badge>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge variant="outline" className={estadoBadge[cliente.estado] || ''}>
+                    {cliente.estado}
+                  </Badge>
+                  {cliente.credit_score != null && (
+                    <CreditScoreIndicator clienteId={cliente.id} compact />
+                  )}
+                </div>
               </div>
             </div>
+            
+            {/* Risk Alert */}
+            <ClienteRiskAlert clienteId={cliente.id} />
+
             {/* Admin actions */}
             <div className="flex gap-2 mt-3 flex-wrap">
               <Button size="sm" variant="outline" className="gap-1" onClick={() => setEditOpen(true)}>
@@ -126,12 +153,16 @@ export function ClienteProfileSheet({ cliente, open, onOpenChange }: Props) {
 
             {/* ── Resumen ── */}
             <TabsContent value="resumen" className="space-y-4 mt-4">
+              {/* Credit Score */}
+              <CreditScoreIndicator clienteId={cliente.id} />
+
               <div className="grid grid-cols-2 gap-3">
                 <InfoCard icon={<DollarSign className="h-4 w-4" />} label="Ingreso Mensual" value={formatCurrency(cliente.ingreso_mensual || 0)} />
                 <InfoCard icon={<DollarSign className="h-4 w-4" />} label="Otros Ingresos" value={formatCurrency(cliente.otros_ingresos || 0)} />
                 <InfoCard icon={<CreditCard className="h-4 w-4" />} label="Préstamos Activos" value={String(perfil?.prestamos_activos ?? 0)} />
                 <InfoCard icon={<AlertTriangle className="h-4 w-4" />} label="Cuotas Vencidas" value={String(perfil?.cuotas_vencidas ?? 0)} />
               </div>
+              
               {cliente.banco_nombre && (
                 <Card>
                   <CardContent className="pt-4">
@@ -140,6 +171,32 @@ export function ClienteProfileSheet({ cliente, open, onOpenChange }: Props) {
                   </CardContent>
                 </Card>
               )}
+
+              {/* Geolocation */}
+              <Card>
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium flex items-center gap-1"><MapPin className="h-4 w-4" /> Ubicación</p>
+                    <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={captureGeolocation}>
+                      <MapPin className="h-3 w-3" /> Capturar GPS
+                    </Button>
+                  </div>
+                  {cliente.latitud && cliente.longitud ? (
+                    <>
+                      <p className="text-xs text-muted-foreground mb-2">Lat: {cliente.latitud}, Lng: {cliente.longitud}</p>
+                      <iframe
+                        className="w-full h-40 rounded-lg border"
+                        src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${cliente.latitud},${cliente.longitud}&zoom=16`}
+                        allowFullScreen
+                        loading="lazy"
+                      />
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Sin ubicación registrada. Use "Capturar GPS" para obtener la ubicación.</p>
+                  )}
+                </CardContent>
+              </Card>
+
               {cliente.notas && (
                 <Card>
                   <CardContent className="pt-4">
@@ -234,6 +291,8 @@ export function ClienteProfileSheet({ cliente, open, onOpenChange }: Props) {
 
             {/* ── Perfil Crediticio ── */}
             <TabsContent value="crediticio" className="space-y-4 mt-4">
+              <CreditScoreIndicator clienteId={cliente.id} />
+              
               <div className="grid grid-cols-2 gap-3">
                 <InfoCard icon={<FileText className="h-4 w-4" />} label="Solicitudes Totales" value={String(perfil?.total_solicitudes ?? 0)} />
                 <InfoCard icon={<UserCheck className="h-4 w-4" />} label="Aprobadas" value={String(perfil?.solicitudes_aprobadas ?? 0)} />
