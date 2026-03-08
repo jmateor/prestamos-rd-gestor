@@ -1,30 +1,29 @@
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Plus, User, Phone, MapPin, Briefcase } from 'lucide-react';
-import { useCreateCliente, type ClienteInsert } from '@/hooks/useClientes';
+import { User, Phone, MapPin, Briefcase } from 'lucide-react';
+import { useUpdateCliente, type Cliente } from '@/hooks/useClientes';
 
 const schema = z.object({
-  primer_nombre: z.string().min(2, 'Mínimo 2 caracteres'),
+  primer_nombre: z.string().min(2),
   segundo_nombre: z.string().default(''),
-  primer_apellido: z.string().min(2, 'Mínimo 2 caracteres'),
+  primer_apellido: z.string().min(2),
   segundo_apellido: z.string().default(''),
-  cedula: z.string().min(11, 'Cédula inválida').max(13, 'Cédula inválida'),
+  cedula: z.string().min(11).max(13),
   fecha_nacimiento: z.string().optional().nullable(),
   sexo: z.string().optional().nullable(),
   estado_civil: z.string().optional().nullable(),
   nacionalidad: z.string().default('Dominicana'),
-  telefono: z.string().min(10, 'Teléfono inválido'),
+  telefono: z.string().min(10),
   telefono2: z.string().default(''),
-  email: z.string().email('Email inválido').or(z.literal('')).default(''),
+  email: z.string().email().or(z.literal('')).default(''),
   direccion: z.string().default(''),
   sector: z.string().default(''),
   ciudad: z.string().default(''),
@@ -39,7 +38,6 @@ const schema = z.object({
   ingreso_mensual: z.coerce.number().min(0).default(0),
   otros_ingresos: z.coerce.number().min(0).default(0),
   antiguedad_laboral: z.string().default(''),
-  estado: z.string().default('activo'),
   banco_nombre: z.string().default(''),
   numero_cuenta: z.string().default(''),
   notas: z.string().default(''),
@@ -47,48 +45,70 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export function ClienteFormDialog() {
-  const [open, setOpen] = useState(false);
-  const createCliente = useCreateCliente();
+interface Props {
+  cliente: Cliente;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function ClienteEditFormDialog({ cliente, open, onOpenChange }: Props) {
+  const updateCliente = useUpdateCliente();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      primer_nombre: '', segundo_nombre: '', primer_apellido: '', segundo_apellido: '',
-      cedula: '', telefono: '', telefono2: '', email: '', nacionalidad: 'Dominicana',
-      direccion: '', sector: '', ciudad: '', provincia: '', referencia_direccion: '',
-      tipo_vivienda: 'alquilada', tiempo_residencia: '',
-      lugar_trabajo: '', cargo: '', direccion_trabajo: '', telefono_trabajo: '',
-      ingreso_mensual: 0, otros_ingresos: 0, antiguedad_laboral: '',
-      estado: 'activo', banco_nombre: '', numero_cuenta: '', notas: '',
+      primer_nombre: cliente.primer_nombre,
+      segundo_nombre: cliente.segundo_nombre || '',
+      primer_apellido: cliente.primer_apellido,
+      segundo_apellido: cliente.segundo_apellido || '',
+      cedula: cliente.cedula,
+      fecha_nacimiento: cliente.fecha_nacimiento,
+      sexo: cliente.sexo,
+      estado_civil: cliente.estado_civil,
+      nacionalidad: cliente.nacionalidad || 'Dominicana',
+      telefono: cliente.telefono,
+      telefono2: cliente.telefono2 || '',
+      email: cliente.email || '',
+      direccion: cliente.direccion || '',
+      sector: cliente.sector || '',
+      ciudad: cliente.ciudad || '',
+      provincia: cliente.provincia || '',
+      referencia_direccion: cliente.referencia_direccion || '',
+      tipo_vivienda: cliente.tipo_vivienda || 'alquilada',
+      tiempo_residencia: cliente.tiempo_residencia || '',
+      lugar_trabajo: cliente.lugar_trabajo || '',
+      cargo: cliente.cargo || '',
+      direccion_trabajo: cliente.direccion_trabajo || '',
+      telefono_trabajo: cliente.telefono_trabajo || '',
+      ingreso_mensual: cliente.ingreso_mensual || 0,
+      otros_ingresos: cliente.otros_ingresos || 0,
+      antiguedad_laboral: cliente.antiguedad_laboral || '',
+      banco_nombre: cliente.banco_nombre || '',
+      numero_cuenta: cliente.numero_cuenta || '',
+      notas: cliente.notas || '',
     },
   });
 
   const onSubmit = async (values: FormValues) => {
-    await createCliente.mutateAsync(values as ClienteInsert);
-    form.reset();
-    setOpen(false);
+    await updateCliente.mutateAsync({ id: cliente.id, data: values });
+    onOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" /> Nuevo Cliente
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Registrar Nuevo Cliente</DialogTitle>
+          <DialogTitle>Editar Cliente</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <Tabs defaultValue="personal" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="personal" className="gap-1 text-xs"><User className="h-3 w-3" /> Personal</TabsTrigger>
                 <TabsTrigger value="contacto" className="gap-1 text-xs"><Phone className="h-3 w-3" /> Contacto</TabsTrigger>
                 <TabsTrigger value="direccion" className="gap-1 text-xs"><MapPin className="h-3 w-3" /> Dirección</TabsTrigger>
                 <TabsTrigger value="laboral" className="gap-1 text-xs"><Briefcase className="h-3 w-3" /> Laboral</TabsTrigger>
+                <TabsTrigger value="banco" className="gap-1 text-xs">Banco</TabsTrigger>
               </TabsList>
 
               <TabsContent value="personal" className="space-y-3 mt-4">
@@ -108,7 +128,7 @@ export function ClienteFormDialog() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <FormField control={form.control} name="cedula" render={({ field }) => (
-                    <FormItem><FormLabel>Cédula *</FormLabel><FormControl><Input placeholder="000-0000000-0" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Cédula *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                   <FormField control={form.control} name="fecha_nacimiento" render={({ field }) => (
                     <FormItem><FormLabel>Fecha Nacimiento</FormLabel><FormControl><Input type="date" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
@@ -144,10 +164,10 @@ export function ClienteFormDialog() {
               <TabsContent value="contacto" className="space-y-3 mt-4">
                 <div className="grid grid-cols-2 gap-3">
                   <FormField control={form.control} name="telefono" render={({ field }) => (
-                    <FormItem><FormLabel>Teléfono Principal *</FormLabel><FormControl><Input placeholder="809-000-0000" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Teléfono *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                   <FormField control={form.control} name="telefono2" render={({ field }) => (
-                    <FormItem><FormLabel>Teléfono Secundario</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Teléfono 2</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                 </div>
                 <FormField control={form.control} name="email" render={({ field }) => (
@@ -185,7 +205,7 @@ export function ClienteFormDialog() {
                   )} />
                 </div>
                 <FormField control={form.control} name="referencia_direccion" render={({ field }) => (
-                  <FormItem><FormLabel>Referencia</FormLabel><FormControl><Input placeholder="Cerca de..." {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Referencia</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
               </TabsContent>
 
@@ -206,7 +226,7 @@ export function ClienteFormDialog() {
                     <FormItem><FormLabel>Teléfono Trabajo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                   <FormField control={form.control} name="antiguedad_laboral" render={({ field }) => (
-                    <FormItem><FormLabel>Antigüedad</FormLabel><FormControl><Input placeholder="Ej: 2 años" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Antigüedad</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -218,23 +238,24 @@ export function ClienteFormDialog() {
                   )} />
                 </div>
                 <FormField control={form.control} name="notas" render={({ field }) => (
-                  <FormItem><FormLabel>Notas</FormLabel><FormControl><Textarea placeholder="Observaciones..." {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Notas</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
-                <div className="grid grid-cols-2 gap-3">
-                  <FormField control={form.control} name="banco_nombre" render={({ field }) => (
-                    <FormItem><FormLabel>Banco</FormLabel><FormControl><Input placeholder="Ej: Banco Popular" {...field} /></FormControl><FormMessage /></FormItem>
-                  )} />
-                  <FormField control={form.control} name="numero_cuenta" render={({ field }) => (
-                    <FormItem><FormLabel>No. Cuenta</FormLabel><FormControl><Input placeholder="000-000000-0" {...field} /></FormControl><FormMessage /></FormItem>
-                  )} />
-                </div>
+              </TabsContent>
+
+              <TabsContent value="banco" className="space-y-3 mt-4">
+                <FormField control={form.control} name="banco_nombre" render={({ field }) => (
+                  <FormItem><FormLabel>Nombre del Banco</FormLabel><FormControl><Input placeholder="Ej: Banco Popular" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="numero_cuenta" render={({ field }) => (
+                  <FormItem><FormLabel>Número de Cuenta</FormLabel><FormControl><Input placeholder="Ej: 000-000000-0" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
               </TabsContent>
             </Tabs>
 
             <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-              <Button type="submit" disabled={createCliente.isPending}>
-                {createCliente.isPending ? 'Guardando...' : 'Registrar Cliente'}
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+              <Button type="submit" disabled={updateCliente.isPending}>
+                {updateCliente.isPending ? 'Guardando...' : 'Guardar Cambios'}
               </Button>
             </div>
           </form>

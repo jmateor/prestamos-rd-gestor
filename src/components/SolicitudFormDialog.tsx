@@ -79,21 +79,33 @@ export function SolicitudFormDialog() {
                   />
                   {loadingClientes ? (
                     <div className="flex justify-center py-2"><Loader2 className="h-4 w-4 animate-spin" /></div>
-                  ) : clientes && clientes.length > 0 ? (
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar cliente" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {clientes.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.primer_nombre} {c.primer_apellido} — {c.cedula}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                   ) : clientes && clientes.length > 0 ? (
+                    <>
+                      <Select onValueChange={(val) => {
+                        const sel = clientes.find(c => c.id === val);
+                        if (sel && sel.estado !== 'activo') {
+                          return; // blocked
+                        }
+                        field.onChange(val);
+                      }} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccionar cliente" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {clientes.map((c) => (
+                            <SelectItem key={c.id} value={c.id} disabled={c.estado !== 'activo'}>
+                              {c.primer_nombre} {c.primer_apellido} — {c.cedula}
+                              {c.estado !== 'activo' && ` (${c.estado})`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {field.value && clientes.find(c => c.id === field.value)?.estado !== 'activo' && (
+                        <p className="text-xs text-destructive">⚠ Este cliente está inactivo o bloqueado. No se pueden crear solicitudes.</p>
+                      )}
+                    </>
                   ) : (
                     <p className="text-sm text-muted-foreground">No se encontraron clientes. Registre uno primero.</p>
                   )}
