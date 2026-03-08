@@ -14,6 +14,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { ClienteRiskAlert } from '@/components/ClienteRiskAlert';
+import { CreditScoreIndicator } from '@/components/CreditScoreIndicator';
 
 const estadoBadge: Record<string, { class: string; label: string }> = {
   pendiente: { class: 'bg-warning/10 text-warning border-warning/20', label: 'Pendiente' },
@@ -96,6 +98,12 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
                 {estadoBadge[solicitud.estado]?.label}
               </Badge>
             </div>
+
+            {/* Risk Alert */}
+            {cliente && <ClienteRiskAlert clienteId={solicitud.cliente_id} />}
+
+            {/* Credit Score */}
+            {cliente && <CreditScoreIndicator clienteId={solicitud.cliente_id} compact />}
 
             {/* Cliente info */}
             {cliente && (

@@ -1,1 +1,7 @@
 project_id = "qtxpjccldgaywnflwzqs"
+
+[functions.calculate-credit-score]
+verify_jwt = false
+
+[functions.ocr-cedula]
+verify_jwt = false

@@ -206,6 +206,7 @@ export type Database = {
           ciudad: string | null
           created_at: string
           created_by: string | null
+          credit_score: number | null
           direccion: string | null
           direccion_trabajo: string | null
           email: string | null
@@ -215,8 +216,11 @@ export type Database = {
           foto: string | null
           id: string
           ingreso_mensual: number | null
+          latitud: number | null
+          longitud: number | null
           lugar_trabajo: string | null
           nacionalidad: string | null
+          nivel_riesgo: string | null
           notas: string | null
           numero_cuenta: string | null
           otros_ingresos: number | null
@@ -245,6 +249,7 @@ export type Database = {
           ciudad?: string | null
           created_at?: string
           created_by?: string | null
+          credit_score?: number | null
           direccion?: string | null
           direccion_trabajo?: string | null
           email?: string | null
@@ -254,8 +259,11 @@ export type Database = {
           foto?: string | null
           id?: string
           ingreso_mensual?: number | null
+          latitud?: number | null
+          longitud?: number | null
           lugar_trabajo?: string | null
           nacionalidad?: string | null
+          nivel_riesgo?: string | null
           notas?: string | null
           numero_cuenta?: string | null
           otros_ingresos?: number | null
@@ -284,6 +292,7 @@ export type Database = {
           ciudad?: string | null
           created_at?: string
           created_by?: string | null
+          credit_score?: number | null
           direccion?: string | null
           direccion_trabajo?: string | null
           email?: string | null
@@ -293,8 +302,11 @@ export type Database = {
           foto?: string | null
           id?: string
           ingreso_mensual?: number | null
+          latitud?: number | null
+          longitud?: number | null
           lugar_trabajo?: string | null
           nacionalidad?: string | null
+          nivel_riesgo?: string | null
           notas?: string | null
           numero_cuenta?: string | null
           otros_ingresos?: number | null
@@ -1120,6 +1132,7 @@ export type Database = {
           comentarios_evaluacion: string | null
           created_at: string
           estado: string
+          evaluacion_automatica: string | null
           evaluado_por: string | null
           fecha_evaluacion: string | null
           frecuencia_pago: string
@@ -1129,6 +1142,7 @@ export type Database = {
           oficial_credito_id: string
           plazo_meses: number
           proposito: string
+          score_al_solicitar: number | null
           tasa_interes_sugerida: number | null
           updated_at: string
         }
@@ -1137,6 +1151,7 @@ export type Database = {
           comentarios_evaluacion?: string | null
           created_at?: string
           estado?: string
+          evaluacion_automatica?: string | null
           evaluado_por?: string | null
           fecha_evaluacion?: string | null
           frecuencia_pago: string
@@ -1146,6 +1161,7 @@ export type Database = {
           oficial_credito_id: string
           plazo_meses: number
           proposito?: string
+          score_al_solicitar?: number | null
           tasa_interes_sugerida?: number | null
           updated_at?: string
         }
@@ -1154,6 +1170,7 @@ export type Database = {
           comentarios_evaluacion?: string | null
           created_at?: string
           estado?: string
+          evaluacion_automatica?: string | null
           evaluado_por?: string | null
           fecha_evaluacion?: string | null
           frecuencia_pago?: string
@@ -1163,6 +1180,7 @@ export type Database = {
           oficial_credito_id?: string
           plazo_meses?: number
           proposito?: string
+          score_al_solicitar?: number | null
           tasa_interes_sugerida?: number | null
           updated_at?: string
         }
