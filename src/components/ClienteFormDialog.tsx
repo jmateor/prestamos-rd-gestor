@@ -220,6 +220,14 @@ export function ClienteFormDialog() {
                 <FormField control={form.control} name="notas" render={({ field }) => (
                   <FormItem><FormLabel>Notas</FormLabel><FormControl><Textarea placeholder="Observaciones..." {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField control={form.control} name="banco_nombre" render={({ field }) => (
+                    <FormItem><FormLabel>Banco</FormLabel><FormControl><Input placeholder="Ej: Banco Popular" {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={form.control} name="numero_cuenta" render={({ field }) => (
+                    <FormItem><FormLabel>No. Cuenta</FormLabel><FormControl><Input placeholder="000-000000-0" {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                </div>
               </TabsContent>
             </Tabs>
 

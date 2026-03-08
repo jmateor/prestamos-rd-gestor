@@ -433,6 +433,56 @@ export function generarContratoPDF(data: ContratoData) {
     doc.text(data.cliente_nombre, pw - margin - 55, cFirmaY + 10);
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // PÁGINA: DOCUMENTO DE IDENTIDAD DEL CLIENTE
+  // ═══════════════════════════════════════════════════════════
+  if (data.cliente_cedula_frontal_url || data.cliente_cedula_trasera_url) {
+    doc.addPage();
+    let iy = 25;
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DOCUMENTO DE IDENTIDAD DEL CLIENTE', pw / 2, iy, { align: 'center' });
+    iy += 6;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${data.cliente_nombre} — Cédula: ${data.cliente_cedula}`, pw / 2, iy, { align: 'center' });
+    iy += 10;
+
+    const imgW = 140;
+    const imgH = 90;
+
+    if (data.cliente_cedula_frontal_url) {
+      try {
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Frente', pw / 2, iy, { align: 'center' });
+        iy += 5;
+        doc.addImage(data.cliente_cedula_frontal_url, 'JPEG', (pw - imgW) / 2, iy, imgW, imgH);
+        iy += imgH + 10;
+      } catch {
+        doc.setFontSize(9);
+        doc.text('[No se pudo cargar la imagen frontal]', pw / 2, iy, { align: 'center' });
+        iy += 10;
+      }
+    }
+
+    if (data.cliente_cedula_trasera_url) {
+      try {
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Reverso', pw / 2, iy, { align: 'center' });
+        iy += 5;
+        doc.addImage(data.cliente_cedula_trasera_url, 'JPEG', (pw - imgW) / 2, iy, imgW, imgH);
+        iy += imgH + 10;
+      } catch {
+        doc.setFontSize(9);
+        doc.text('[No se pudo cargar la imagen trasera]', pw / 2, iy, { align: 'center' });
+        iy += 10;
+      }
+    }
+  }
+
   doc.save(`Contrato_${data.numero_prestamo}.pdf`);
 }
 
