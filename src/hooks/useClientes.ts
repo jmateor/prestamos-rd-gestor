@@ -33,11 +33,16 @@ export interface Cliente {
   antiguedad_laboral: string;
   estado: string;
   notas: string;
+  foto: string;
+  cedula_frontal_url: string;
+  cedula_trasera_url: string;
+  banco_nombre: string;
+  numero_cuenta: string;
   created_at: string;
   updated_at: string;
 }
 
-export type ClienteInsert = Omit<Cliente, 'id' | 'created_at' | 'updated_at'>;
+export type ClienteInsert = Omit<Cliente, 'id' | 'created_at' | 'updated_at' | 'foto' | 'cedula_frontal_url' | 'cedula_trasera_url'>;
 
 export function useClientes(search?: string) {
   return useQuery({
@@ -86,6 +91,48 @@ export function useCreateCliente() {
       } else {
         toast.error('Error al registrar cliente: ' + error.message);
       }
+    },
+  });
+}
+
+export function useUpdateCliente() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Cliente> }) => {
+      const { error } = await supabase
+        .from('clientes')
+        .update(data as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      toast.success('Cliente actualizado');
+    },
+    onError: (error: any) => {
+      toast.error('Error al actualizar: ' + error.message);
+    },
+  });
+}
+
+export function useDeleteCliente() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('clientes')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      toast.success('Cliente eliminado');
+    },
+    onError: (error: any) => {
+      toast.error('Error al eliminar: ' + error.message);
     },
   });
 }
