@@ -11,6 +11,7 @@ import {
   Settings,
   Wallet,
   History,
+  Navigation,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
