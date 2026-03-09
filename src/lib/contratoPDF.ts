@@ -293,6 +293,11 @@ export function generarContratoPDF(data: ContratoData) {
   doc.text('JBM RD Préstamos', margin + 2, firmaY + 10);
 
   // Firma Deudor
+  if (data.firma_cliente) {
+    try {
+      doc.addImage(data.firma_cliente, 'PNG', pw - margin - 65, firmaY - 20, 65, 20);
+    } catch { /* ignore */ }
+  }
   doc.line(pw - margin - 65, firmaY, pw - margin, firmaY);
   doc.text('EL PRESTATARIO / DEUDOR', pw - margin - 63, firmaY + 5);
   doc.text(data.cliente_nombre, pw - margin - 63, firmaY + 10);
