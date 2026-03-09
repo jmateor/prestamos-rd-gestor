@@ -9,6 +9,7 @@ export interface ContratoData {
   cliente_telefono: string;
   cliente_cedula_frontal_url?: string;
   cliente_cedula_trasera_url?: string;
+  firma_cliente?: string; // base64 data URL from signature pad
   monto_aprobado: number;
   tasa_interes: number;
   plazo_meses: number;

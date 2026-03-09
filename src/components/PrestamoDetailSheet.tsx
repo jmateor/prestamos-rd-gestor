@@ -276,7 +276,7 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
                 <div className="flex flex-wrap gap-2 mb-3">
                   <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={() => {
                     const d = buildContractData();
-                    if (d) generarContratoPDF(d);
+                    if (d) generarContratoPDF({ ...d, firma_cliente: firmaCliente ?? undefined });
                   }}>
                     <FileDown className="h-3.5 w-3.5" /> Contrato PDF
                   </Button>
@@ -286,7 +286,26 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
                   <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={handleEstadoCuenta}>
                     <FileText className="h-3.5 w-3.5" /> Estado de Cuenta
                   </Button>
+                  <Button
+                    size="sm"
+                    variant={firmaCliente ? 'default' : 'outline'}
+                    className="gap-1.5 h-8 text-xs"
+                    onClick={() => setShowFirma(!showFirma)}
+                  >
+                    <PenTool className="h-3.5 w-3.5" />
+                    {firmaCliente ? 'Firma ✓' : 'Firmar Contrato'}
+                  </Button>
                 </div>
+
+                {showFirma && (
+                  <div className="mb-3">
+                    <SignaturePad onSave={(dataUrl) => {
+                      setFirmaCliente(dataUrl);
+                      setShowFirma(false);
+                      toast.success('Firma capturada correctamente');
+                    }} />
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                   <div><p className="text-muted-foreground">Monto</p><p className="font-semibold">{formatCurrency(prestamo.monto_aprobado)}</p></div>
