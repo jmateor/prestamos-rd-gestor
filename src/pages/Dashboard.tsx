@@ -201,6 +201,8 @@ export default function Dashboard() {
           )}
         </CardContent>
       </Card>
+      {/* Advanced KPIs */}
+      <DashboardKPIs />
     </div>
   );
 }
