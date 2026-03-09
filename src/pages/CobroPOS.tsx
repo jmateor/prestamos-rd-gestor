@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Search, CreditCard, Printer, X, Check, AlertTriangle, DollarSign, Receipt } from 'lucide-react';
+import { Search, CreditCard, Printer, X, Check, AlertTriangle, DollarSign, Receipt, Banknote, ArrowRightLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -63,20 +63,24 @@ export default function CobroPOS() {
   const [searchResults, setSearchResults] = useState<PrestamoResult[]>([]);
   const [searching, setSearching] = useState(false);
 
-  // Selected
   const [selectedPrestamo, setSelectedPrestamo] = useState<PrestamoResult | null>(null);
   const [cuotas, setCuotas] = useState<CuotaPOS[]>([]);
   const [loadingCuotas, setLoadingCuotas] = useState(false);
 
   // Payment form
+  const [montoPagar, setMontoPagar] = useState('');
   const [montoRecibido, setMontoRecibido] = useState('');
-  const [metodoPago, setMetodoPago] = useState('efectivo');
+  const [metodoPago, setMetodoPago] = useState('');
   const [referencia, setReferencia] = useState('');
 
   // Receipt data after payment
   const [pagoResult, setPagoResult] = useState<{
     cuotasPagadas: { numero: number; capital: number; interes: number; mora: number; total: number }[];
     totalPagado: number;
+    montoRecibido: number;
+    devuelta: number;
+    metodoPago: string;
+    referencia: string;
   } | null>(null);
 
   const today = new Date().toISOString().split('T')[0];
@@ -88,8 +92,6 @@ export default function CobroPOS() {
     setSearching(true);
     try {
       const q = term.trim();
-
-      // 1. Search by loan number directly
       const { data: byPrestamo } = await supabase
         .from('prestamos')
         .select('id, numero_prestamo, monto_aprobado, estado, frecuencia_pago, cliente_id, clientes(id, primer_nombre, primer_apellido, segundo_nombre, segundo_apellido, cedula, telefono)')
@@ -97,7 +99,6 @@ export default function CobroPOS() {
         .ilike('numero_prestamo', `%${q}%`)
         .limit(10);
 
-      // 2. Search by client fields
       const { data: clientes } = await supabase
         .from('clientes')
         .select('id')
@@ -116,7 +117,6 @@ export default function CobroPOS() {
         byCliente = data ?? [];
       }
 
-      // Merge & deduplicate
       const map = new Map<string, any>();
       for (const p of [...(byPrestamo ?? []), ...byCliente]) {
         if (p.clientes) map.set(p.id, p);
@@ -142,26 +142,30 @@ export default function CobroPOS() {
     setCuotas((data as CuotaPOS[]) ?? []);
     setLoadingCuotas(false);
     setStep('cuotas');
-    // Pre-fill monto with first pending cuota
     const primera = (data ?? [])[0];
-    if (primera) setMontoRecibido((primera.monto_cuota - primera.monto_pagado).toFixed(2));
+    if (primera) {
+      const val = (primera.monto_cuota - primera.monto_pagado).toFixed(2);
+      setMontoPagar(val);
+      setMontoRecibido('');
+    }
   };
 
   // ── Compute payment distribution ────────────────────────────
   const cuotasPendientes = useMemo(() => cuotas.filter(c => c.estado !== 'pagada'), [cuotas]);
-
   const saldoTotal = useMemo(() => cuotasPendientes.reduce((a, c) => a + (c.monto_cuota - c.monto_pagado), 0), [cuotasPendientes]);
 
+  const montoPagarNum = parseFloat(montoPagar) || 0;
+  const montoRecibidoNum = parseFloat(montoRecibido) || 0;
+  const devuelta = metodoPago === 'efectivo' ? Math.max(0, montoRecibidoNum - montoPagarNum) : 0;
+
   const distribucion = useMemo(() => {
-    const monto = parseFloat(montoRecibido) || 0;
-    let restante = monto;
+    let restante = montoPagarNum;
     const result: { cuota: CuotaPOS; capital: number; interes: number; mora: number; total: number }[] = [];
 
     for (const c of cuotasPendientes) {
       if (restante <= 0) break;
       const pendiente = c.monto_cuota - c.monto_pagado;
       const pago = Math.min(restante, pendiente);
-      // Proportional split
       const ratio = pago / c.monto_cuota;
       const moraAplicada = Math.min(pago, (c.mora ?? 0) * ratio);
       const interesAplicado = c.interes * ratio;
@@ -177,10 +181,32 @@ export default function CobroPOS() {
       restante -= pago;
     }
     return result;
-  }, [montoRecibido, cuotasPendientes]);
+  }, [montoPagarNum, cuotasPendientes]);
 
   const totalDistribuido = distribucion.reduce((a, d) => a + d.total, 0);
-  const cambio = Math.max(0, (parseFloat(montoRecibido) || 0) - saldoTotal);
+
+  // ── Validations ─────────────────────────────────────────────
+  const validarPago = (): string | null => {
+    if (!metodoPago) return 'Debe seleccionar un método de pago.';
+    if (montoPagarNum <= 0) return 'El monto a pagar debe ser mayor a cero.';
+    if (metodoPago === 'efectivo') {
+      if (!montoRecibido || montoRecibidoNum <= 0) return 'Debe ingresar el monto recibido del cliente.';
+      if (montoRecibidoNum < montoPagarNum) return 'El monto recibido no puede ser menor al monto a pagar.';
+    }
+    if (metodoPago === 'transferencia') {
+      if (!referencia.trim()) return 'Debe ingresar el número de transferencia.';
+    }
+    return null;
+  };
+
+  const handleCobrar = () => {
+    const error = validarPago();
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    setStep('confirm');
+  };
 
   // ── Process Payment ─────────────────────────────────────────
   const procesarPago = async () => {
@@ -193,20 +219,23 @@ export default function CobroPOS() {
         monto_pagado: d.total,
         fecha_pago: today,
         metodo_pago: metodoPago,
-        referencia,
+        referencia: metodoPago === 'transferencia' ? referencia : '',
       });
     }
 
-    // Audit
     await registrarAudit({
       accion: 'cobro_pos',
       tabla: 'pagos',
       registro_id: selectedPrestamo.id,
       datos_nuevos: {
         prestamo: selectedPrestamo.numero_prestamo,
-        monto: totalDistribuido,
-        metodo: metodoPago,
+        monto_pagado: totalDistribuido,
+        metodo_pago: metodoPago,
+        monto_recibido: metodoPago === 'efectivo' ? montoRecibidoNum : totalDistribuido,
+        devuelta: metodoPago === 'efectivo' ? devuelta : 0,
+        referencia_transferencia: metodoPago === 'transferencia' ? referencia : null,
         cuotas: distribucion.map(d => d.cuota.numero_cuota),
+        usuario: user?.email,
       },
     });
 
@@ -219,6 +248,10 @@ export default function CobroPOS() {
         total: d.total,
       })),
       totalPagado: totalDistribuido,
+      montoRecibido: metodoPago === 'efectivo' ? montoRecibidoNum : totalDistribuido,
+      devuelta: metodoPago === 'efectivo' ? devuelta : 0,
+      metodoPago,
+      referencia: metodoPago === 'transferencia' ? referencia : '',
     });
 
     setStep('done');
@@ -230,7 +263,6 @@ export default function CobroPOS() {
     if (!selectedPrestamo || !pagoResult) return;
     const cliente = selectedPrestamo.clientes;
 
-    // Refresh cuotas for remaining balance
     const { data: cuotasAct } = await supabase
       .from('cuotas')
       .select('monto_cuota, monto_pagado, estado')
@@ -239,15 +271,13 @@ export default function CobroPOS() {
 
     const pendientes = cuotasAct?.filter(c => c.estado !== 'pagada') ?? [];
     const saldo = cuotasAct?.reduce((a, c) => a + (c.monto_cuota - c.monto_pagado), 0) ?? 0;
-
-    // Use first cuota data for receipt
     const primeraCuota = pagoResult.cuotasPagadas[0];
 
     const doc = generarReciboPago({
       monto_pagado: pagoResult.totalPagado,
       fecha_pago: today,
-      metodo_pago: metodoPago,
-      referencia,
+      metodo_pago: pagoResult.metodoPago,
+      referencia: pagoResult.referencia,
       numero_cuota: primeraCuota.numero,
       monto_cuota: primeraCuota.total,
       monto_pagado_acumulado: primeraCuota.total,
@@ -257,6 +287,9 @@ export default function CobroPOS() {
       cliente_cedula: cliente.cedula,
       cuotas_restantes: pendientes.length,
       saldo_total_pendiente: Math.max(0, saldo),
+      monto_recibido: pagoResult.montoRecibido,
+      devuelta: pagoResult.devuelta,
+      usuario: user?.email ?? '',
     });
 
     doc.save(`recibo-POS-${selectedPrestamo.numero_prestamo}.pdf`);
@@ -269,8 +302,9 @@ export default function CobroPOS() {
     setSearchResults([]);
     setSelectedPrestamo(null);
     setCuotas([]);
+    setMontoPagar('');
     setMontoRecibido('');
-    setMetodoPago('efectivo');
+    setMetodoPago('');
     setReferencia('');
     setPagoResult(null);
     qc.invalidateQueries({ queryKey: ['cobranza'] });
@@ -278,6 +312,10 @@ export default function CobroPOS() {
   };
 
   const cliente = selectedPrestamo?.clientes;
+  const metodoLabel: Record<string, string> = {
+    efectivo: '💵 Efectivo',
+    transferencia: '🏦 Transferencia',
+  };
 
   return (
     <div className="flex flex-col h-full min-h-[80vh]">
@@ -358,7 +396,6 @@ export default function CobroPOS() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 max-w-7xl mx-auto">
             {/* Left: Client + Cuotas */}
             <div className="lg:col-span-2 space-y-4">
-              {/* Client info */}
               <Card>
                 <CardContent className="p-4">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
@@ -382,7 +419,6 @@ export default function CobroPOS() {
                 </CardContent>
               </Card>
 
-              {/* Cuotas table */}
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">Cuotas Pendientes ({cuotasPendientes.length})</CardTitle>
@@ -440,16 +476,20 @@ export default function CobroPOS() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* Monto a pagar */}
                   <div>
-                    <label className="text-sm font-medium mb-1 block">Monto Recibido (RD$) *</label>
+                    <label className="text-sm font-medium mb-1 block">Monto a Pagar (RD$) *</label>
                     <Input
                       autoFocus
                       type="number"
                       min={0}
                       step="0.01"
                       placeholder="0.00"
-                      value={montoRecibido}
-                      onChange={e => setMontoRecibido(e.target.value)}
+                      value={montoPagar}
+                      onChange={e => {
+                        setMontoPagar(e.target.value);
+                        setMontoRecibido('');
+                      }}
                       className="text-2xl h-14 font-bold text-center"
                     />
                   </div>
@@ -457,56 +497,101 @@ export default function CobroPOS() {
                   {/* Quick amounts */}
                   <div className="flex flex-wrap gap-2">
                     {cuotasPendientes.length > 0 && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setMontoRecibido((cuotasPendientes[0].monto_cuota - cuotasPendientes[0].monto_pagado).toFixed(2))}
-                      >
+                      <Button variant="outline" size="sm" onClick={() => {
+                        setMontoPagar((cuotasPendientes[0].monto_cuota - cuotasPendientes[0].monto_pagado).toFixed(2));
+                        setMontoRecibido('');
+                      }}>
                         1 cuota
                       </Button>
                     )}
                     {cuotasPendientes.length > 1 && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const dos = cuotasPendientes.slice(0, 2).reduce((a, c) => a + (c.monto_cuota - c.monto_pagado), 0);
-                          setMontoRecibido(dos.toFixed(2));
-                        }}
-                      >
+                      <Button variant="outline" size="sm" onClick={() => {
+                        const dos = cuotasPendientes.slice(0, 2).reduce((a, c) => a + (c.monto_cuota - c.monto_pagado), 0);
+                        setMontoPagar(dos.toFixed(2));
+                        setMontoRecibido('');
+                      }}>
                         2 cuotas
                       </Button>
                     )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setMontoRecibido(saldoTotal.toFixed(2))}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => {
+                      setMontoPagar(saldoTotal.toFixed(2));
+                      setMontoRecibido('');
+                    }}>
                       Total
                     </Button>
                   </div>
 
+                  {/* Método de pago - OBLIGATORIO */}
                   <div>
-                    <label className="text-sm font-medium mb-1 block">Método de Pago</label>
-                    <Select value={metodoPago} onValueChange={setMetodoPago}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                    <label className="text-sm font-medium mb-1 block">Método de Pago *</label>
+                    <Select value={metodoPago} onValueChange={(v) => { setMetodoPago(v); setReferencia(''); setMontoRecibido(''); }}>
+                      <SelectTrigger className={!metodoPago ? 'border-destructive/50' : ''}>
+                        <SelectValue placeholder="Seleccione método de pago..." />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="efectivo">💵 Efectivo</SelectItem>
                         <SelectItem value="transferencia">🏦 Transferencia</SelectItem>
-                        <SelectItem value="deposito">📥 Depósito</SelectItem>
-                        <SelectItem value="tarjeta">💳 Tarjeta</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Referencia</label>
-                    <Input
-                      placeholder="Nro. referencia (opcional)"
-                      value={referencia}
-                      onChange={e => setReferencia(e.target.value)}
-                    />
-                  </div>
+                  {/* EFECTIVO: Monto recibido + devuelta */}
+                  {metodoPago === 'efectivo' && (
+                    <div className="space-y-3 rounded-lg border border-dashed border-primary/30 p-3 bg-muted/30">
+                      <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                        <Banknote className="h-4 w-4" /> Pago en Efectivo
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">Monto Recibido del Cliente (RD$) *</label>
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          placeholder="0.00"
+                          value={montoRecibido}
+                          onChange={e => setMontoRecibido(e.target.value)}
+                          className="text-xl h-12 font-bold text-center"
+                        />
+                      </div>
+                      {montoRecibidoNum > 0 && montoPagarNum > 0 && (
+                        <div className="space-y-1 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Monto a pagar:</span>
+                            <span className="font-medium">{formatCurrency(montoPagarNum)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Monto recibido:</span>
+                            <span className="font-medium">{formatCurrency(montoRecibidoNum)}</span>
+                          </div>
+                          <Separator />
+                          <div className="flex justify-between font-bold text-lg">
+                            <span>Devuelta:</span>
+                            <span className={devuelta > 0 ? 'text-primary' : montoRecibidoNum < montoPagarNum ? 'text-destructive' : ''}>
+                              {montoRecibidoNum < montoPagarNum ? `Faltan ${formatCurrency(montoPagarNum - montoRecibidoNum)}` : formatCurrency(devuelta)}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* TRANSFERENCIA: Número de referencia */}
+                  {metodoPago === 'transferencia' && (
+                    <div className="space-y-3 rounded-lg border border-dashed border-primary/30 p-3 bg-muted/30">
+                      <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                        <ArrowRightLeft className="h-4 w-4" /> Pago por Transferencia
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">Número de Transferencia *</label>
+                        <Input
+                          placeholder="Ej: TRX45892177"
+                          value={referencia}
+                          onChange={e => setReferencia(e.target.value)}
+                          className={!referencia.trim() ? 'border-destructive/50' : ''}
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   <Separator />
 
@@ -525,19 +610,13 @@ export default function CobroPOS() {
                         <span>Total a aplicar</span>
                         <span>{formatCurrency(totalDistribuido)}</span>
                       </div>
-                      {cambio > 0.01 && (
-                        <div className="flex justify-between text-primary font-bold">
-                          <span>Cambio</span>
-                          <span>{formatCurrency(cambio)}</span>
-                        </div>
-                      )}
                     </div>
                   )}
 
                   <Button
                     className="w-full h-12 text-lg gap-2"
-                    disabled={!montoRecibido || parseFloat(montoRecibido) <= 0 || registrarPago.isPending}
-                    onClick={() => setStep('confirm')}
+                    disabled={!montoPagar || montoPagarNum <= 0 || !metodoPago || registrarPago.isPending}
+                    onClick={handleCobrar}
                   >
                     <Receipt className="h-5 w-5" /> Cobrar {formatCurrency(totalDistribuido)}
                   </Button>
@@ -561,6 +640,10 @@ export default function CobroPOS() {
                     <span className="font-medium">{cliente?.primer_nombre} {cliente?.primer_apellido}</span>
                   </div>
                   <div className="flex justify-between">
+                    <span className="text-muted-foreground">Cédula</span>
+                    <span className="font-mono">{cliente?.cedula}</span>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">Préstamo</span>
                     <span className="font-mono">{selectedPrestamo.numero_prestamo}</span>
                   </div>
@@ -581,18 +664,33 @@ export default function CobroPOS() {
                   ))}
                   <Separator />
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Método</span>
-                    <span className="capitalize">{metodoPago}</span>
+                    <span className="text-muted-foreground">Método de pago</span>
+                    <span>{metodoLabel[metodoPago] ?? metodoPago}</span>
                   </div>
+                  {metodoPago === 'transferencia' && referencia && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Nro. Transferencia</span>
+                      <span className="font-mono text-xs">{referencia}</span>
+                    </div>
+                  )}
+                  <Separator />
                   <div className="flex justify-between text-lg font-bold">
-                    <span>Total</span>
+                    <span>Monto a Pagar</span>
                     <span className="text-primary">{formatCurrency(totalDistribuido)}</span>
                   </div>
-                  {cambio > 0.01 && (
-                    <div className="flex justify-between font-bold text-primary">
-                      <span>Cambio</span>
-                      <span>{formatCurrency(cambio)}</span>
-                    </div>
+                  {metodoPago === 'efectivo' && (
+                    <>
+                      <div className="flex justify-between font-medium">
+                        <span className="text-muted-foreground">Monto Recibido</span>
+                        <span>{formatCurrency(montoRecibidoNum)}</span>
+                      </div>
+                      {devuelta > 0.01 && (
+                        <div className="flex justify-between font-bold text-primary text-lg">
+                          <span>Devuelta</span>
+                          <span>{formatCurrency(devuelta)}</span>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
 
@@ -626,6 +724,13 @@ export default function CobroPOS() {
                   Se aplicaron {pagoResult.cuotasPagadas.length} cuota(s) por un total de{' '}
                   <span className="font-bold text-foreground">{formatCurrency(pagoResult.totalPagado)}</span>
                 </p>
+
+                {pagoResult.metodoPago === 'efectivo' && pagoResult.devuelta > 0.01 && (
+                  <div className="rounded-lg bg-primary/10 p-3 text-center">
+                    <p className="text-sm text-muted-foreground">Devuelta al cliente</p>
+                    <p className="text-2xl font-bold text-primary">{formatCurrency(pagoResult.devuelta)}</p>
+                  </div>
+                )}
 
                 <div className="flex gap-2">
                   <Button variant="outline" className="flex-1 gap-2" onClick={imprimirRecibo}>

@@ -2,24 +2,23 @@ import jsPDF from 'jspdf';
 import { formatCurrency, formatDate } from '@/lib/format';
 
 export interface ReciboPagoData {
-  // Pago
   monto_pagado: number;
   fecha_pago: string;
   metodo_pago: string;
   referencia: string;
-  // Cuota
   numero_cuota: number;
   monto_cuota: number;
-  monto_pagado_acumulado: number; // total pagado en esta cuota después del pago
-  // Préstamo
+  monto_pagado_acumulado: number;
   numero_prestamo: string;
   monto_aprobado: number;
-  // Cliente
   cliente_nombre: string;
   cliente_cedula: string;
-  // Resumen restante
   cuotas_restantes: number;
   saldo_total_pendiente: number;
+  // New fields
+  monto_recibido?: number;
+  devuelta?: number;
+  usuario?: string;
 }
 
 const metodoLabel: Record<string, string> = {
@@ -30,7 +29,7 @@ const metodoLabel: Record<string, string> = {
 };
 
 export function generarReciboPago(data: ReciboPagoData): jsPDF {
-  const doc = new jsPDF({ unit: 'mm', format: [80, 200] }); // receipt-style narrow
+  const doc = new jsPDF({ unit: 'mm', format: [80, 220] });
   const w = 80;
   let y = 8;
 
@@ -44,6 +43,14 @@ export function generarReciboPago(data: ReciboPagoData): jsPDF {
     doc.setDrawColor(180);
     doc.setLineDashPattern([1, 1], 0);
     doc.line(4, yy, w - 4, yy);
+  };
+
+  const row = (label: string, value: string) => {
+    doc.setFont('helvetica', 'bold');
+    doc.text(label, 4, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(value, w - 4, y, { align: 'right' });
+    y += 4;
   };
 
   // Header
@@ -83,22 +90,25 @@ export function generarReciboPago(data: ReciboPagoData): jsPDF {
   y += 5;
   doc.setFontSize(7);
 
-  const row = (label: string, value: string) => {
-    doc.setFont('helvetica', 'bold');
-    doc.text(label, 4, y);
-    doc.setFont('helvetica', 'normal');
-    doc.text(value, w - 4, y, { align: 'right' });
-    y += 4;
-  };
-
   row('Cuota #', String(data.numero_cuota));
   row('Fecha de pago:', formatDate(data.fecha_pago));
   row('Método:', metodoLabel[data.metodo_pago] ?? data.metodo_pago);
-  if (data.referencia) {
-    row('Referencia:', data.referencia);
+
+  // Transferencia reference
+  if (data.metodo_pago === 'transferencia' && data.referencia) {
+    row('Nro. Transferencia:', data.referencia);
   }
+
   row('Monto cuota:', formatCurrency(data.monto_cuota));
-  row('Pagado ahora:', formatCurrency(data.monto_pagado));
+  row('Monto pagado:', formatCurrency(data.monto_pagado));
+
+  // Efectivo: monto recibido + devuelta
+  if (data.metodo_pago === 'efectivo' && data.monto_recibido != null && data.monto_recibido > 0) {
+    row('Monto recibido:', formatCurrency(data.monto_recibido));
+    if (data.devuelta != null && data.devuelta > 0.01) {
+      row('Devuelta:', formatCurrency(data.devuelta));
+    }
+  }
 
   const restaCuota = data.monto_cuota - data.monto_pagado_acumulado;
   if (restaCuota > 0.01) {
@@ -137,6 +147,14 @@ export function generarReciboPago(data: ReciboPagoData): jsPDF {
 
   line(y);
   y += 5;
+
+  // Usuario que registró
+  if (data.usuario) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6);
+    center(`Registrado por: ${data.usuario}`, y);
+    y += 4;
+  }
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6);
