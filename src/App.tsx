@@ -17,6 +17,7 @@ import Ajustes from "./pages/Ajustes";
 import CierreCaja from "./pages/CierreCaja";
 import Bitacora from "./pages/Bitacora";
 import CobranzaCampo from "./pages/CobranzaCampo";
+import CobroPOS from "./pages/CobroPOS";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const AppRoutes = () => (
     <Route path="/ajustes" element={<ProtectedRoute><Ajustes /></ProtectedRoute>} />
     <Route path="/cierre-caja" element={<ProtectedRoute><CierreCaja /></ProtectedRoute>} />
     <Route path="/bitacora" element={<ProtectedRoute><Bitacora /></ProtectedRoute>} />
+    <Route path="/cobro-pos" element={<ProtectedRoute><CobroPOS /></ProtectedRoute>} />
     <Route path="/cobranza-campo" element={<ProtectedRoute><CobranzaCampo /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>

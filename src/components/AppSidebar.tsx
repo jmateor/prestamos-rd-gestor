@@ -12,6 +12,7 @@ import {
   Wallet,
   History,
   Navigation,
+  CreditCard,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
@@ -35,6 +36,7 @@ const navItems = [
   { title: 'Solicitudes', url: '/solicitudes', icon: FileText },
   { title: 'Préstamos', url: '/prestamos', icon: Landmark },
   { title: 'Cobranza', url: '/cobranza', icon: Receipt },
+  { title: 'Cobro POS', url: '/cobro-pos', icon: CreditCard },
   { title: 'Cobranza Campo', url: '/cobranza-campo', icon: Navigation },
   { title: 'Garantías', url: '/garantias', icon: ShieldCheck },
   { title: 'Reportes', url: '/reportes', icon: BarChart3 },
