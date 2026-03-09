@@ -21,6 +21,7 @@ import { calcAmortizacion, totalCuotas } from '@/lib/amortizacion';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { SignaturePad } from '@/components/SignaturePad';
 
 const estadoBadge: Record<string, string> = {
   pendiente: 'bg-warning/10 text-warning border-warning/20',
