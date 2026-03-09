@@ -6,6 +6,7 @@ import { formatCurrency } from '@/lib/format';
 import { useDashboardRiskMetrics, useTopClientes, useClientesAltoRiesgo } from '@/hooks/useCreditScore';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { DashboardKPIs } from '@/components/DashboardKPIs';
 
 export default function Dashboard() {
   const { data: risk, isLoading: loadingRisk } = useDashboardRiskMetrics();
@@ -200,6 +201,8 @@ export default function Dashboard() {
           )}
         </CardContent>
       </Card>
+      {/* Advanced KPIs */}
+      <DashboardKPIs />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, DollarSign, FileDown, FileText, RotateCcw, CreditCard } from 'lucide-react';
+import { Loader2, DollarSign, FileDown, FileText, RotateCcw, CreditCard, PenTool } from 'lucide-react';
 import { usePrestamo, useCuotas, usePagos, useRegistrarPago, type Cuota } from '@/hooks/usePrestamos';
 import { useHistorialCliente } from '@/hooks/useHistorialCliente';
 import { useReversarPago } from '@/hooks/useAuditLog';
@@ -21,6 +21,7 @@ import { calcAmortizacion, totalCuotas } from '@/lib/amortizacion';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { SignaturePad } from '@/components/SignaturePad';
 
 const estadoBadge: Record<string, string> = {
   pendiente: 'bg-warning/10 text-warning border-warning/20',
@@ -71,6 +72,8 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
   const [reversoMotivo, setReversoMotivo] = useState('');
   const [reversoId, setReversoId] = useState<string | null>(null);
   const [abonoForm, setAbonoForm] = useState({ monto: '', fecha: new Date().toISOString().split('T')[0], metodo: 'efectivo', referencia: '' });
+  const [firmaCliente, setFirmaCliente] = useState<string | null>(null);
+  const [showFirma, setShowFirma] = useState(false);
 
   const cliente = prestamo?.clientes as any;
 
@@ -273,7 +276,7 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
                 <div className="flex flex-wrap gap-2 mb-3">
                   <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={() => {
                     const d = buildContractData();
-                    if (d) generarContratoPDF(d);
+                    if (d) generarContratoPDF({ ...d, firma_cliente: firmaCliente ?? undefined });
                   }}>
                     <FileDown className="h-3.5 w-3.5" /> Contrato PDF
                   </Button>
@@ -283,7 +286,26 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
                   <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={handleEstadoCuenta}>
                     <FileText className="h-3.5 w-3.5" /> Estado de Cuenta
                   </Button>
+                  <Button
+                    size="sm"
+                    variant={firmaCliente ? 'default' : 'outline'}
+                    className="gap-1.5 h-8 text-xs"
+                    onClick={() => setShowFirma(!showFirma)}
+                  >
+                    <PenTool className="h-3.5 w-3.5" />
+                    {firmaCliente ? 'Firma ✓' : 'Firmar Contrato'}
+                  </Button>
                 </div>
+
+                {showFirma && (
+                  <div className="mb-3">
+                    <SignaturePad onSave={(dataUrl) => {
+                      setFirmaCliente(dataUrl);
+                      setShowFirma(false);
+                      toast.success('Firma capturada correctamente');
+                    }} />
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                   <div><p className="text-muted-foreground">Monto</p><p className="font-semibold">{formatCurrency(prestamo.monto_aprobado)}</p></div>
