@@ -72,6 +72,8 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
   const [reversoMotivo, setReversoMotivo] = useState('');
   const [reversoId, setReversoId] = useState<string | null>(null);
   const [abonoForm, setAbonoForm] = useState({ monto: '', fecha: new Date().toISOString().split('T')[0], metodo: 'efectivo', referencia: '' });
+  const [firmaCliente, setFirmaCliente] = useState<string | null>(null);
+  const [showFirma, setShowFirma] = useState(false);
 
   const cliente = prestamo?.clientes as any;
 
