@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, DollarSign, FileDown, FileText, RotateCcw, CreditCard } from 'lucide-react';
+import { Loader2, DollarSign, FileDown, FileText, RotateCcw, CreditCard, PenTool } from 'lucide-react';
 import { usePrestamo, useCuotas, usePagos, useRegistrarPago, type Cuota } from '@/hooks/usePrestamos';
 import { useHistorialCliente } from '@/hooks/useHistorialCliente';
 import { useReversarPago } from '@/hooks/useAuditLog';
