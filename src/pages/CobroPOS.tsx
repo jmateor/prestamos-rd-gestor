@@ -88,16 +88,40 @@ export default function CobroPOS() {
     setSearching(true);
     try {
       const q = term.trim();
-      const { data, error } = await supabase
+
+      // 1. Search by loan number directly
+      const { data: byPrestamo } = await supabase
         .from('prestamos')
         .select('id, numero_prestamo, monto_aprobado, estado, frecuencia_pago, cliente_id, clientes(id, primer_nombre, primer_apellido, segundo_nombre, segundo_apellido, cedula, telefono)')
         .eq('estado', 'activo')
-        .or(`numero_prestamo.ilike.%${q}%,clientes.primer_nombre.ilike.%${q}%,clientes.primer_apellido.ilike.%${q}%,clientes.cedula.ilike.%${q}%,clientes.telefono.ilike.%${q}%`)
+        .ilike('numero_prestamo', `%${q}%`)
         .limit(10);
-      if (error) throw error;
-      // Filter null joins
-      const filtered = ((data as any[]) ?? []).filter((p: any) => p.clientes);
-      setSearchResults(filtered as PrestamoResult[]);
+
+      // 2. Search by client fields
+      const { data: clientes } = await supabase
+        .from('clientes')
+        .select('id')
+        .or(`primer_nombre.ilike.%${q}%,primer_apellido.ilike.%${q}%,cedula.ilike.%${q}%,telefono.ilike.%${q}%`)
+        .limit(20);
+
+      let byCliente: any[] = [];
+      if (clientes && clientes.length > 0) {
+        const ids = clientes.map(c => c.id);
+        const { data } = await supabase
+          .from('prestamos')
+          .select('id, numero_prestamo, monto_aprobado, estado, frecuencia_pago, cliente_id, clientes(id, primer_nombre, primer_apellido, segundo_nombre, segundo_apellido, cedula, telefono)')
+          .eq('estado', 'activo')
+          .in('cliente_id', ids)
+          .limit(10);
+        byCliente = data ?? [];
+      }
+
+      // Merge & deduplicate
+      const map = new Map<string, any>();
+      for (const p of [...(byPrestamo ?? []), ...byCliente]) {
+        if (p.clientes) map.set(p.id, p);
+      }
+      setSearchResults(Array.from(map.values()) as PrestamoResult[]);
     } catch {
       setSearchResults([]);
     } finally {
