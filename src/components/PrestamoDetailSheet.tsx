@@ -15,6 +15,7 @@ import { useHistorialCliente } from '@/hooks/useHistorialCliente';
 import { useReversarPago } from '@/hooks/useAuditLog';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { generarContratoPDF } from '@/lib/contratoPDF';
+import { generarPagarePDF } from '@/lib/pagarePDF';
 import { generarCronogramaPDF } from '@/lib/cronogramaPDF';
 import { generarEstadoCuentaPDF } from '@/lib/estadoCuentaPDF';
 import { calcAmortizacion, totalCuotas } from '@/lib/amortizacion';
