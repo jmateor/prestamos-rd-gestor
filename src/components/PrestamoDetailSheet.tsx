@@ -283,7 +283,39 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
                   }}>
                     <FileDown className="h-3.5 w-3.5" /> Contrato PDF
                   </Button>
-                  <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={handleCronogramaPDF}>
+                  <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={() => {
+                    if (!prestamo || !cliente) return;
+                    const cuotaCalc = calcAmortizacion(
+                      prestamo.monto_aprobado, prestamo.tasa_interes / 100, prestamo.plazo_meses,
+                      prestamo.frecuencia_pago, prestamo.metodo_amortizacion, new Date(prestamo.fecha_desembolso),
+                    );
+                    generarPagarePDF({
+                      numero_prestamo: prestamo.numero_prestamo,
+                      lugar: cliente.ciudad || cliente.provincia || 'Santo Domingo',
+                      fecha_emision: prestamo.fecha_desembolso,
+                      fecha_vencimiento: prestamo.fecha_vencimiento ?? '',
+                      monto: prestamo.monto_aprobado,
+                      tasa_interes: prestamo.tasa_interes,
+                      plazo_meses: prestamo.plazo_meses,
+                      frecuencia_pago: prestamo.frecuencia_pago,
+                      total_cuotas: totalCuotas(prestamo.plazo_meses, prestamo.frecuencia_pago),
+                      cuota_estimada: cuotaCalc[0]?.monto_cuota ?? 0,
+                      deudor_nombre: `${cliente.primer_nombre} ${cliente.primer_apellido}`,
+                      deudor_cedula: cliente.cedula,
+                      deudor_direccion: cliente.direccion ?? '',
+                      deudor_telefono: cliente.telefono,
+                      deudor_nacionalidad: cliente.nacionalidad ?? undefined,
+                      deudor_estado_civil: cliente.estado_civil ?? undefined,
+                      garante: garante ? {
+                        nombre_completo: garante.nombre_completo,
+                        cedula: garante.cedula,
+                        direccion: garante.direccion ?? '',
+                        telefono: garante.telefono,
+                      } : null,
+                      firma_cliente: firmaCliente ?? undefined,
+                    });
+                  }}>
+                    <FileDown className="h-3.5 w-3.5" /> Pagaré Notarial
                     <FileText className="h-3.5 w-3.5" /> Cronograma PDF
                   </Button>
                   <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={handleEstadoCuenta}>
