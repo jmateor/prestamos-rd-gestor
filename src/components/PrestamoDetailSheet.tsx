@@ -158,6 +158,8 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
       cliente_cedula: cliente?.cedula ?? '',
       cliente_direccion: cliente?.direccion ?? '',
       cliente_telefono: cliente?.telefono ?? '',
+      cliente_cedula_frontal_url: cliente?.cedula_frontal_url || undefined,
+      cliente_cedula_trasera_url: cliente?.cedula_trasera_url || undefined,
       monto_aprobado: prestamo.monto_aprobado,
       tasa_interes: prestamo.tasa_interes,
       plazo_meses: prestamo.plazo_meses,
