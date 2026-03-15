@@ -4,7 +4,6 @@ import {
   FileText,
   Landmark,
   Receipt,
-  ShieldCheck,
   BarChart3,
   DollarSign,
   LogOut,
