@@ -1126,6 +1126,41 @@ export type Database = {
           },
         ]
       }
+      solicitud_garantia_fotos: {
+        Row: {
+          created_at: string
+          id: string
+          nombre: string
+          solicitud_id: string
+          tipo: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nombre?: string
+          solicitud_id: string
+          tipo?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nombre?: string
+          solicitud_id?: string
+          tipo?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitud_garantia_fotos_solicitud_id_fkey"
+            columns: ["solicitud_id"]
+            isOneToOne: false
+            referencedRelation: "solicitudes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       solicitudes: {
         Row: {
           cliente_id: string
@@ -1136,14 +1171,33 @@ export type Database = {
           evaluado_por: string | null
           fecha_evaluacion: string | null
           frecuencia_pago: string
+          garantia_anio: number | null
+          garantia_color: string | null
+          garantia_direccion_propiedad: string | null
+          garantia_documento_propiedad: string | null
+          garantia_estado: string | null
+          garantia_estado_bien: string | null
+          garantia_marca: string | null
+          garantia_modelo: string | null
+          garantia_nombre_articulo: string | null
+          garantia_notas: string | null
+          garantia_numero_chasis: string | null
+          garantia_numero_matricula: string | null
+          garantia_numero_placa: string | null
+          garantia_tamano: string | null
+          garantia_tipo_propiedad: string | null
+          garantia_valor_estimado: number | null
           id: string
           monto_solicitado: number
           numero_solicitud: string
           oficial_credito_id: string
           plazo_meses: number
+          porcentaje_prestamo_garantia: number | null
           proposito: string
           score_al_solicitar: number | null
           tasa_interes_sugerida: number | null
+          tiene_garantia: boolean
+          tipo_garantia: string | null
           updated_at: string
         }
         Insert: {
@@ -1155,14 +1209,33 @@ export type Database = {
           evaluado_por?: string | null
           fecha_evaluacion?: string | null
           frecuencia_pago: string
+          garantia_anio?: number | null
+          garantia_color?: string | null
+          garantia_direccion_propiedad?: string | null
+          garantia_documento_propiedad?: string | null
+          garantia_estado?: string | null
+          garantia_estado_bien?: string | null
+          garantia_marca?: string | null
+          garantia_modelo?: string | null
+          garantia_nombre_articulo?: string | null
+          garantia_notas?: string | null
+          garantia_numero_chasis?: string | null
+          garantia_numero_matricula?: string | null
+          garantia_numero_placa?: string | null
+          garantia_tamano?: string | null
+          garantia_tipo_propiedad?: string | null
+          garantia_valor_estimado?: number | null
           id?: string
           monto_solicitado: number
           numero_solicitud: string
           oficial_credito_id: string
           plazo_meses: number
+          porcentaje_prestamo_garantia?: number | null
           proposito?: string
           score_al_solicitar?: number | null
           tasa_interes_sugerida?: number | null
+          tiene_garantia?: boolean
+          tipo_garantia?: string | null
           updated_at?: string
         }
         Update: {
@@ -1174,14 +1247,33 @@ export type Database = {
           evaluado_por?: string | null
           fecha_evaluacion?: string | null
           frecuencia_pago?: string
+          garantia_anio?: number | null
+          garantia_color?: string | null
+          garantia_direccion_propiedad?: string | null
+          garantia_documento_propiedad?: string | null
+          garantia_estado?: string | null
+          garantia_estado_bien?: string | null
+          garantia_marca?: string | null
+          garantia_modelo?: string | null
+          garantia_nombre_articulo?: string | null
+          garantia_notas?: string | null
+          garantia_numero_chasis?: string | null
+          garantia_numero_matricula?: string | null
+          garantia_numero_placa?: string | null
+          garantia_tamano?: string | null
+          garantia_tipo_propiedad?: string | null
+          garantia_valor_estimado?: number | null
           id?: string
           monto_solicitado?: number
           numero_solicitud?: string
           oficial_credito_id?: string
           plazo_meses?: number
+          porcentaje_prestamo_garantia?: number | null
           proposito?: string
           score_al_solicitar?: number | null
           tasa_interes_sugerida?: number | null
+          tiene_garantia?: boolean
+          tipo_garantia?: string | null
           updated_at?: string
         }
         Relationships: [
