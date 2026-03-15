@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, FileText, Loader2 } from 'lucide-react';
+import { Search, FileText, Loader2, ShieldCheck } from 'lucide-react';
 import { useSolicitudes } from '@/hooks/useSolicitudes';
 import { SolicitudFormDialog } from '@/components/SolicitudFormDialog';
 import { SolicitudDetailDialog } from '@/components/SolicitudDetailDialog';
@@ -101,6 +101,11 @@ export default function Solicitudes() {
                     >
                       <TableCell className="font-mono text-sm font-medium">
                         {sol.numero_solicitud}
+                        {(sol as any).tiene_garantia && (
+                          <Badge variant="outline" className="ml-2 text-[10px] py-0 bg-primary/5 text-primary border-primary/20">
+                            <ShieldCheck className="h-2.5 w-2.5 mr-0.5" /> Garantía
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         {cliente

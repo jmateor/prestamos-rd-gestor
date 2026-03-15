@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Edit, UserCheck, UserX, Trash2, CreditCard, FileText, Users, Briefcase, DollarSign, AlertTriangle, Ban, MapPin } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Edit, UserCheck, UserX, Trash2, CreditCard, FileText, Users, Briefcase, DollarSign, AlertTriangle, Ban, MapPin, ShieldCheck } from 'lucide-react';
 import type { Cliente } from '@/hooks/useClientes';
 import { useUpdateCliente, useDeleteCliente } from '@/hooks/useClientes';
 import { useHistorialCliente } from '@/hooks/useHistorialCliente';
 import { usePerfilCrediticio, useReferencias, useDependientes, useConyuge } from '@/hooks/useClienteProfile';
+import { useClienteGarantias } from '@/hooks/useSolicitudes';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { ClienteEditFormDialog } from '@/components/ClienteEditFormDialog';
 import { ClienteDocumentosTab } from '@/components/ClienteDocumentosTab';
@@ -39,6 +41,7 @@ export function ClienteProfileSheet({ cliente, open, onOpenChange }: Props) {
   const { data: referencias } = useReferencias(cliente?.id);
   const { data: dependientes } = useDependientes(cliente?.id);
   const { data: conyuge } = useConyuge(cliente?.id);
+  const { data: garantias } = useClienteGarantias(cliente?.id);
 
   if (!cliente) return null;
 
@@ -142,11 +145,12 @@ export function ClienteProfileSheet({ cliente, open, onOpenChange }: Props) {
           </SheetHeader>
 
           <Tabs defaultValue="resumen" className="mt-4">
-            <TabsList className="grid w-full grid-cols-6 text-xs">
+            <TabsList className="grid w-full grid-cols-7 text-xs">
               <TabsTrigger value="resumen">Resumen</TabsTrigger>
               <TabsTrigger value="personal">Personal</TabsTrigger>
               <TabsTrigger value="referencias">Familia</TabsTrigger>
               <TabsTrigger value="documentos">Docs</TabsTrigger>
+              <TabsTrigger value="bienes">Bienes</TabsTrigger>
               <TabsTrigger value="historial">Historial</TabsTrigger>
               <TabsTrigger value="crediticio">Crédito</TabsTrigger>
             </TabsList>
@@ -261,6 +265,56 @@ export function ClienteProfileSheet({ cliente, open, onOpenChange }: Props) {
                 dependientes={dependientes ?? []}
                 referencias={referencias ?? []}
               />
+            </TabsContent>
+
+            {/* ── Bienes Registrados ── */}
+            <TabsContent value="bienes" className="space-y-3 mt-4">
+              {!garantias?.length ? (
+                <div className="text-center py-8">
+                  <ShieldCheck className="h-10 w-10 mx-auto text-muted-foreground/30 mb-2" />
+                  <p className="text-sm text-muted-foreground">Sin bienes registrados como garantía</p>
+                </div>
+              ) : (
+                <div className="rounded-md border overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Descripción</TableHead>
+                        <TableHead>Valor</TableHead>
+                        <TableHead>Préstamo</TableHead>
+                        <TableHead>Estado</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {garantias.map((g: any) => {
+                        const tipoLabel: Record<string, string> = {
+                          vehiculo: 'Vehículo', motocicleta: 'Motocicleta', vivienda: 'Vivienda',
+                          terreno: 'Terreno', electrodomestico: 'Electrodoméstico', equipo: 'Equipo', otro: 'Otro',
+                        };
+                        const desc = g.garantia_nombre_articulo || `${g.garantia_marca || ''} ${g.garantia_modelo || ''}`.trim() || g.garantia_direccion_propiedad || '—';
+                        const prestamo = g.prestamos?.[0];
+                        const estadoMap: Record<string, string> = {
+                          en_evaluacion: 'En Evaluación', activa: 'Activa', liberada: 'Liberada', proceso_legal: 'Proceso Legal',
+                        };
+                        return (
+                          <TableRow key={g.id}>
+                            <TableCell className="text-sm">{tipoLabel[g.tipo_garantia] || g.tipo_garantia}</TableCell>
+                            <TableCell className="text-sm">{desc}</TableCell>
+                            <TableCell className="text-sm">{formatCurrency(g.garantia_valor_estimado || 0)}</TableCell>
+                            <TableCell className="text-sm font-mono">{prestamo?.numero_prestamo || g.numero_solicitud}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="text-xs">
+                                {estadoMap[g.garantia_estado] || g.garantia_estado}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </TabsContent>
 
             {/* ── Documentos ── */}

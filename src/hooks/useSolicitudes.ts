@@ -19,6 +19,26 @@ export interface Solicitud {
   oficial_credito_id: string;
   created_at: string;
   updated_at: string;
+  // Guarantee fields
+  tiene_garantia: boolean;
+  tipo_garantia: string | null;
+  garantia_marca: string;
+  garantia_modelo: string;
+  garantia_anio: number | null;
+  garantia_color: string;
+  garantia_numero_placa: string;
+  garantia_numero_chasis: string;
+  garantia_numero_matricula: string;
+  garantia_estado_bien: string;
+  garantia_direccion_propiedad: string;
+  garantia_tipo_propiedad: string;
+  garantia_tamano: string;
+  garantia_documento_propiedad: string;
+  garantia_nombre_articulo: string;
+  garantia_valor_estimado: number;
+  garantia_estado: string;
+  garantia_notas: string;
+  porcentaje_prestamo_garantia: number;
   // joined
   clientes?: {
     primer_nombre: string;
@@ -26,6 +46,15 @@ export interface Solicitud {
     cedula: string;
     telefono: string;
   };
+}
+
+export interface GarantiaFoto {
+  id: string;
+  solicitud_id: string;
+  tipo: string;
+  nombre: string;
+  url: string;
+  created_at: string;
 }
 
 export interface Garante {
@@ -96,6 +125,22 @@ export function useGarantes(solicitudId: string | undefined) {
   });
 }
 
+export function useGarantiaFotos(solicitudId: string | undefined) {
+  return useQuery({
+    queryKey: ['garantia_fotos', solicitudId],
+    enabled: !!solicitudId,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('solicitud_garantia_fotos')
+        .select('*')
+        .eq('solicitud_id', solicitudId!)
+        .order('created_at');
+      if (error) throw error;
+      return data as GarantiaFoto[];
+    },
+  });
+}
+
 export interface SolicitudInsert {
   cliente_id: string;
   monto_solicitado: number;
@@ -103,6 +148,24 @@ export interface SolicitudInsert {
   frecuencia_pago: string;
   proposito: string;
   tasa_interes_sugerida: number;
+  tiene_garantia?: boolean;
+  tipo_garantia?: string | null;
+  garantia_marca?: string;
+  garantia_modelo?: string;
+  garantia_anio?: number | null;
+  garantia_color?: string;
+  garantia_numero_placa?: string;
+  garantia_numero_chasis?: string;
+  garantia_numero_matricula?: string;
+  garantia_estado_bien?: string;
+  garantia_direccion_propiedad?: string;
+  garantia_tipo_propiedad?: string;
+  garantia_tamano?: string;
+  garantia_documento_propiedad?: string;
+  garantia_nombre_articulo?: string;
+  garantia_valor_estimado?: number;
+  garantia_notas?: string;
+  porcentaje_prestamo_garantia?: number;
 }
 
 export function useCreateSolicitud() {
@@ -111,12 +174,12 @@ export function useCreateSolicitud() {
 
   return useMutation({
     mutationFn: async (data: SolicitudInsert) => {
-      const { data: result, error } = await supabase
+      const { data: result, error } = await (supabase as any)
         .from('solicitudes')
         .insert({
           ...data,
           oficial_credito_id: user!.id,
-          numero_solicitud: 'TEMP', // trigger will overwrite
+          numero_solicitud: 'TEMP',
         })
         .select()
         .single();
@@ -139,19 +202,27 @@ export function useUpdateSolicitudEstado() {
 
   return useMutation({
     mutationFn: async ({ id, estado, comentarios }: { id: string; estado: string; comentarios?: string }) => {
-      const { error } = await supabase
+      const updateData: any = {
+        estado,
+        comentarios_evaluacion: comentarios || '',
+        fecha_evaluacion: new Date().toISOString(),
+        evaluado_por: user!.id,
+      };
+
+      // When approved and has guarantee, set guarantee state to active
+      if (estado === 'aprobada') {
+        updateData.garantia_estado = 'activa';
+      }
+
+      const { error } = await (supabase as any)
         .from('solicitudes')
-        .update({
-          estado,
-          comentarios_evaluacion: comentarios || '',
-          fecha_evaluacion: new Date().toISOString(),
-          evaluado_por: user!.id,
-        })
+        .update(updateData)
         .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['solicitudes'] });
+      queryClient.invalidateQueries({ queryKey: ['solicitud'] });
       toast.success('Estado actualizado');
     },
     onError: (error: any) => {
@@ -174,6 +245,24 @@ export function useAddGarante() {
     },
     onError: (error: any) => {
       toast.error('Error: ' + error.message);
+    },
+  });
+}
+
+// Get all guarantees for a client (from their solicitudes)
+export function useClienteGarantias(clienteId: string | undefined) {
+  return useQuery({
+    queryKey: ['cliente_garantias', clienteId],
+    enabled: !!clienteId,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('solicitudes')
+        .select('id, numero_solicitud, tipo_garantia, garantia_marca, garantia_modelo, garantia_nombre_articulo, garantia_valor_estimado, garantia_estado, garantia_direccion_propiedad, tiene_garantia, prestamos(numero_prestamo, estado)')
+        .eq('cliente_id', clienteId!)
+        .eq('tiene_garantia', true)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as any[];
     },
   });
 }
