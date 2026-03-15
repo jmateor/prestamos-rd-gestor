@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Edit, UserCheck, UserX, Trash2, CreditCard, FileText, Users, Briefcase, DollarSign, AlertTriangle, Ban, MapPin, ShieldCheck } from 'lucide-react';
 import type { Cliente } from '@/hooks/useClientes';
 import { useUpdateCliente, useDeleteCliente } from '@/hooks/useClientes';
