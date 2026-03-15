@@ -11,6 +11,7 @@ import type { Cliente } from '@/hooks/useClientes';
 import { useUpdateCliente, useDeleteCliente } from '@/hooks/useClientes';
 import { useHistorialCliente } from '@/hooks/useHistorialCliente';
 import { usePerfilCrediticio, useReferencias, useDependientes, useConyuge } from '@/hooks/useClienteProfile';
+import { useClienteGarantias } from '@/hooks/useSolicitudes';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { ClienteEditFormDialog } from '@/components/ClienteEditFormDialog';
 import { ClienteDocumentosTab } from '@/components/ClienteDocumentosTab';
