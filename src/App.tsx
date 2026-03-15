@@ -37,7 +37,7 @@ const AppRoutes = () => (
     <Route path="/solicitudes" element={<ProtectedRoute><Solicitudes /></ProtectedRoute>} />
     <Route path="/prestamos" element={<ProtectedRoute><Prestamos /></ProtectedRoute>} />
     <Route path="/cobranza" element={<ProtectedRoute><Cobranza /></ProtectedRoute>} />
-    <Route path="/garantias" element={<ProtectedRoute><Garantias /></ProtectedRoute>} />
+    {/* Garantías route removed - integrated into Solicitudes */}
     <Route path="/reportes" element={<ProtectedRoute><Reportes /></ProtectedRoute>} />
     <Route path="/ajustes" element={<ProtectedRoute><Ajustes /></ProtectedRoute>} />
     <Route path="/cierre-caja" element={<ProtectedRoute><CierreCaja /></ProtectedRoute>} />
