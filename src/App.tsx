@@ -11,7 +11,7 @@ import Clientes from "./pages/Clientes";
 import Solicitudes from "./pages/Solicitudes";
 import Prestamos from "./pages/Prestamos";
 import Cobranza from "./pages/Cobranza";
-import Garantias from "./pages/Garantias";
+// Garantias module removed - integrated into Solicitudes
 import Reportes from "./pages/Reportes";
 import Ajustes from "./pages/Ajustes";
 import CierreCaja from "./pages/CierreCaja";
