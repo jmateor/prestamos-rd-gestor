@@ -40,6 +40,7 @@ export function ClienteProfileSheet({ cliente, open, onOpenChange }: Props) {
   const { data: referencias } = useReferencias(cliente?.id);
   const { data: dependientes } = useDependientes(cliente?.id);
   const { data: conyuge } = useConyuge(cliente?.id);
+  const { data: garantias } = useClienteGarantias(cliente?.id);
 
   if (!cliente) return null;
 
