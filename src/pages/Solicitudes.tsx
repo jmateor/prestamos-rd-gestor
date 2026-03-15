@@ -101,6 +101,11 @@ export default function Solicitudes() {
                     >
                       <TableCell className="font-mono text-sm font-medium">
                         {sol.numero_solicitud}
+                        {(sol as any).tiene_garantia && (
+                          <Badge variant="outline" className="ml-2 text-[10px] py-0 bg-primary/5 text-primary border-primary/20">
+                            <ShieldCheck className="h-2.5 w-2.5 mr-0.5" /> Garantía
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         {cliente
