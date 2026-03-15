@@ -38,7 +38,7 @@ const navItems = [
   { title: 'Cobranza', url: '/cobranza', icon: Receipt },
   { title: 'Cobro POS', url: '/cobro-pos', icon: CreditCard },
   { title: 'Cobranza Campo', url: '/cobranza-campo', icon: Navigation },
-  { title: 'Garantías', url: '/garantias', icon: ShieldCheck },
+  
   { title: 'Reportes', url: '/reportes', icon: BarChart3 },
   { title: 'Cierre Caja', url: '/cierre-caja', icon: Wallet },
   { title: 'Bitácora', url: '/bitacora', icon: History },

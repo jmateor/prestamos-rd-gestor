@@ -7,8 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CheckCircle, XCircle, Clock, UserPlus, Loader2 } from 'lucide-react';
-import { useSolicitud, useGarantes, useUpdateSolicitudEstado, useAddGarante, type Solicitud } from '@/hooks/useSolicitudes';
+import { CheckCircle, XCircle, Clock, UserPlus, Loader2, ShieldCheck, Car, Home, Package, Image } from 'lucide-react';
+import { useSolicitud, useGarantes, useGarantiaFotos, useUpdateSolicitudEstado, useAddGarante, type Solicitud } from '@/hooks/useSolicitudes';
 import { formatCurrency } from '@/lib/format';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -26,6 +26,18 @@ const estadoBadge: Record<string, { class: string; label: string }> = {
 
 const frecuenciaLabel: Record<string, string> = {
   diaria: 'Diaria', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual',
+};
+
+const garantiaEstadoBadge: Record<string, { class: string; label: string }> = {
+  en_evaluacion: { class: 'bg-warning/10 text-warning border-warning/20', label: 'En Evaluación' },
+  activa: { class: 'bg-success/10 text-success border-success/20', label: 'Activa' },
+  liberada: { class: 'bg-primary/10 text-primary border-primary/20', label: 'Liberada' },
+  proceso_legal: { class: 'bg-destructive/10 text-destructive border-destructive/20', label: 'Proceso Legal' },
+};
+
+const tipoGarantiaLabel: Record<string, string> = {
+  vehiculo: 'Vehículo', motocicleta: 'Motocicleta', vivienda: 'Vivienda',
+  terreno: 'Terreno', electrodomestico: 'Electrodoméstico', equipo: 'Equipo', otro: 'Otro Bien',
 };
 
 const garanteSchema = z.object({
@@ -46,6 +58,7 @@ interface Props {
 export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
   const { data: solicitud, isLoading } = useSolicitud(solicitudId ?? undefined);
   const { data: garantes } = useGarantes(solicitudId ?? undefined);
+  const { data: garantiaFotos } = useGarantiaFotos(solicitudId ?? undefined);
   const updateEstado = useUpdateSolicitudEstado();
   const addGarante = useAddGarante();
   const [comentarios, setComentarios] = useState('');
@@ -58,6 +71,12 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
 
   const handleEstado = async (estado: string) => {
     if (!solicitudId) return;
+    // Block approval if guarantee is incomplete
+    if (estado === 'aprobada' && solicitud?.tiene_garantia) {
+      if (!solicitud.tipo_garantia || (solicitud.garantia_valor_estimado ?? 0) <= 0) {
+        return;
+      }
+    }
     await updateEstado.mutateAsync({ id: solicitudId, estado, comentarios });
     setComentarios('');
   };
@@ -79,6 +98,10 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
   };
 
   const cliente = solicitud?.clientes as any;
+  const sol = solicitud as any;
+
+  const isVehiculo = sol?.tipo_garantia === 'vehiculo' || sol?.tipo_garantia === 'motocicleta';
+  const isPropiedad = sol?.tipo_garantia === 'vivienda' || sol?.tipo_garantia === 'terreno';
 
   return (
     <Dialog open={!!solicitudId} onOpenChange={() => onClose()}>
@@ -93,7 +116,14 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
           <div className="space-y-4">
             {/* Header */}
             <div className="flex items-center justify-between">
-              <span className="text-lg font-semibold">{solicitud.numero_solicitud}</span>
+              <div>
+                <span className="text-lg font-semibold">{solicitud.numero_solicitud}</span>
+                {sol.tiene_garantia && (
+                  <Badge variant="outline" className="ml-2 text-xs bg-primary/5 text-primary border-primary/20">
+                    <ShieldCheck className="h-3 w-3 mr-1" /> Con Garantía
+                  </Badge>
+                )}
+              </div>
               <Badge variant="outline" className={estadoBadge[solicitud.estado]?.class}>
                 {estadoBadge[solicitud.estado]?.label}
               </Badge>
@@ -101,8 +131,6 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
 
             {/* Risk Alert */}
             {cliente && <ClienteRiskAlert clienteId={solicitud.cliente_id} />}
-
-            {/* Credit Score */}
             {cliente && <CreditScoreIndicator clienteId={solicitud.cliente_id} compact />}
 
             {/* Cliente info */}
@@ -127,8 +155,84 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
                 <div><span className="text-muted-foreground">Frecuencia:</span> {frecuenciaLabel[solicitud.frecuencia_pago]}</div>
                 <div><span className="text-muted-foreground">Tasa:</span> {solicitud.tasa_interes_sugerida}%</div>
                 <div className="col-span-2"><span className="text-muted-foreground">Propósito:</span> {solicitud.proposito}</div>
+                <div><span className="text-muted-foreground">Tipo:</span> {sol.tiene_garantia ? 'Con Garantía' : 'Personal (sin garantía)'}</div>
               </CardContent>
             </Card>
+
+            {/* ── Garantía ── */}
+            {sol.tiene_garantia && sol.tipo_garantia && (
+              <Card className="border-primary/20">
+                <CardHeader className="py-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <ShieldCheck className="h-4 w-4 text-primary" />
+                      Garantía del Préstamo
+                    </CardTitle>
+                    <Badge variant="outline" className={garantiaEstadoBadge[sol.garantia_estado]?.class || ''}>
+                      {garantiaEstadoBadge[sol.garantia_estado]?.label || sol.garantia_estado}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3 pb-3">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div><span className="text-muted-foreground">Tipo:</span> {tipoGarantiaLabel[sol.tipo_garantia] || sol.tipo_garantia}</div>
+                    <div><span className="text-muted-foreground">Valor Estimado:</span> {formatCurrency(sol.garantia_valor_estimado || 0)}</div>
+
+                    {isVehiculo && (
+                      <>
+                        {sol.garantia_marca && <div><span className="text-muted-foreground">Marca:</span> {sol.garantia_marca}</div>}
+                        {sol.garantia_modelo && <div><span className="text-muted-foreground">Modelo:</span> {sol.garantia_modelo}</div>}
+                        {sol.garantia_anio && <div><span className="text-muted-foreground">Año:</span> {sol.garantia_anio}</div>}
+                        {sol.garantia_color && <div><span className="text-muted-foreground">Color:</span> {sol.garantia_color}</div>}
+                        {sol.garantia_numero_placa && <div><span className="text-muted-foreground">Placa:</span> {sol.garantia_numero_placa}</div>}
+                        {sol.garantia_numero_chasis && <div><span className="text-muted-foreground">Chasis:</span> {sol.garantia_numero_chasis}</div>}
+                        {sol.garantia_numero_matricula && <div><span className="text-muted-foreground">Matrícula:</span> {sol.garantia_numero_matricula}</div>}
+                        {sol.garantia_estado_bien && <div><span className="text-muted-foreground">Estado:</span> {sol.garantia_estado_bien}</div>}
+                      </>
+                    )}
+
+                    {isPropiedad && (
+                      <>
+                        {sol.garantia_direccion_propiedad && <div className="col-span-2"><span className="text-muted-foreground">Dirección:</span> {sol.garantia_direccion_propiedad}</div>}
+                        {sol.garantia_tipo_propiedad && <div><span className="text-muted-foreground">Tipo:</span> {sol.garantia_tipo_propiedad}</div>}
+                        {sol.garantia_tamano && <div><span className="text-muted-foreground">Tamaño:</span> {sol.garantia_tamano}</div>}
+                        {sol.garantia_documento_propiedad && <div className="col-span-2"><span className="text-muted-foreground">Documento:</span> {sol.garantia_documento_propiedad}</div>}
+                      </>
+                    )}
+
+                    {!isVehiculo && !isPropiedad && (
+                      <>
+                        {sol.garantia_nombre_articulo && <div className="col-span-2"><span className="text-muted-foreground">Artículo:</span> {sol.garantia_nombre_articulo}</div>}
+                        {sol.garantia_marca && <div><span className="text-muted-foreground">Marca:</span> {sol.garantia_marca}</div>}
+                        {sol.garantia_modelo && <div><span className="text-muted-foreground">Modelo:</span> {sol.garantia_modelo}</div>}
+                        {sol.garantia_estado_bien && <div><span className="text-muted-foreground">Estado:</span> {sol.garantia_estado_bien}</div>}
+                      </>
+                    )}
+
+                    <div><span className="text-muted-foreground">% Máx. Préstamo:</span> {sol.porcentaje_prestamo_garantia}%</div>
+                    <div><span className="text-muted-foreground">Monto Máx.:</span> {formatCurrency((sol.garantia_valor_estimado || 0) * (sol.porcentaje_prestamo_garantia || 70) / 100)}</div>
+                  </div>
+
+                  {sol.garantia_notas && (
+                    <p className="text-xs text-muted-foreground border-t pt-2">{sol.garantia_notas}</p>
+                  )}
+
+                  {/* Fotos */}
+                  {garantiaFotos && garantiaFotos.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium flex items-center gap-1"><Image className="h-3 w-3" /> Fotos del Bien</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {garantiaFotos.map((f) => (
+                          <a key={f.id} href={f.url} target="_blank" rel="noopener noreferrer">
+                            <img src={f.url} alt={f.nombre} className="rounded-md border h-24 w-full object-cover hover:opacity-80 transition-opacity" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Garantes */}
             <Card>
@@ -212,11 +316,7 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
               <>
                 <Separator />
                 <div className="space-y-3">
-                  <Textarea
-                    placeholder="Comentarios de evaluación..."
-                    value={comentarios}
-                    onChange={(e) => setComentarios(e.target.value)}
-                  />
+                  <Textarea placeholder="Comentarios de evaluación..." value={comentarios} onChange={(e) => setComentarios(e.target.value)} />
                   <div className="flex gap-2 justify-end">
                     {solicitud.estado === 'pendiente' && (
                       <Button variant="outline" className="gap-1" onClick={() => handleEstado('en_evaluacion')} disabled={updateEstado.isPending}>
