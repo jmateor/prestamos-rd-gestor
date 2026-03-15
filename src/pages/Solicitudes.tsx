@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, FileText, Loader2 } from 'lucide-react';
+import { Search, FileText, Loader2, ShieldCheck } from 'lucide-react';
 import { useSolicitudes } from '@/hooks/useSolicitudes';
 import { SolicitudFormDialog } from '@/components/SolicitudFormDialog';
 import { SolicitudDetailDialog } from '@/components/SolicitudDetailDialog';
