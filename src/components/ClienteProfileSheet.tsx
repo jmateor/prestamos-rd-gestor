@@ -144,11 +144,12 @@ export function ClienteProfileSheet({ cliente, open, onOpenChange }: Props) {
           </SheetHeader>
 
           <Tabs defaultValue="resumen" className="mt-4">
-            <TabsList className="grid w-full grid-cols-6 text-xs">
+            <TabsList className="grid w-full grid-cols-7 text-xs">
               <TabsTrigger value="resumen">Resumen</TabsTrigger>
               <TabsTrigger value="personal">Personal</TabsTrigger>
               <TabsTrigger value="referencias">Familia</TabsTrigger>
               <TabsTrigger value="documentos">Docs</TabsTrigger>
+              <TabsTrigger value="bienes">Bienes</TabsTrigger>
               <TabsTrigger value="historial">Historial</TabsTrigger>
               <TabsTrigger value="crediticio">Crédito</TabsTrigger>
             </TabsList>
