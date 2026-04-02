@@ -77,8 +77,12 @@ export interface PrestamoInsert {
   plazo_meses: number;
   frecuencia_pago: string;
   metodo_amortizacion: string;
+  tipo_amortizacion?: string;
   fecha_desembolso: string;
   notas?: string;
+  gastos_legales?: number;
+  gastos_cierre?: number;
+  proposito?: string;
 }
 
 // ── Queries ───────────────────────────────────────────────────────────────────
