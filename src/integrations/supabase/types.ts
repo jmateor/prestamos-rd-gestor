@@ -197,6 +197,7 @@ export type Database = {
       }
       clientes: {
         Row: {
+          alias: string | null
           antiguedad_laboral: string | null
           banco_nombre: string | null
           cargo: string | null
@@ -240,6 +241,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          alias?: string | null
           antiguedad_laboral?: string | null
           banco_nombre?: string | null
           cargo?: string | null
@@ -283,6 +285,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          alias?: string | null
           antiguedad_laboral?: string | null
           banco_nombre?: string | null
           cargo?: string | null
@@ -336,6 +339,7 @@ export type Database = {
           id: string
           identificacion: string | null
           nombre: string
+          user_id: string | null
         }
         Insert: {
           activo?: boolean | null
@@ -345,6 +349,7 @@ export type Database = {
           id?: string
           identificacion?: string | null
           nombre: string
+          user_id?: string | null
         }
         Update: {
           activo?: boolean | null
@@ -354,6 +359,7 @@ export type Database = {
           id?: string
           identificacion?: string | null
           nombre?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -807,6 +813,64 @@ export type Database = {
           },
         ]
       }
+      gestion_cobranza: {
+        Row: {
+          cliente_id: string
+          cobrador_id: string | null
+          created_at: string
+          fecha_visita: string
+          id: string
+          notas: string | null
+          prestamo_id: string
+          resultado: string | null
+          tipo_gestion: string | null
+        }
+        Insert: {
+          cliente_id: string
+          cobrador_id?: string | null
+          created_at?: string
+          fecha_visita?: string
+          id?: string
+          notas?: string | null
+          prestamo_id: string
+          resultado?: string | null
+          tipo_gestion?: string | null
+        }
+        Update: {
+          cliente_id?: string
+          cobrador_id?: string | null
+          created_at?: string
+          fecha_visita?: string
+          id?: string
+          notas?: string | null
+          prestamo_id?: string
+          resultado?: string | null
+          tipo_gestion?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gestion_cobranza_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gestion_cobranza_cobrador_id_fkey"
+            columns: ["cobrador_id"]
+            isOneToOne: false
+            referencedRelation: "cobradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gestion_cobranza_prestamo_id_fkey"
+            columns: ["prestamo_id"]
+            isOneToOne: false
+            referencedRelation: "prestamos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notas_credito: {
         Row: {
           aplicada: boolean | null
@@ -847,9 +911,12 @@ export type Database = {
       }
       pagos: {
         Row: {
+          banco_cheque: string | null
           caja_id: string | null
           capital_pagado: number | null
+          cobrador_id: string | null
           created_at: string
+          created_by: string | null
           cuota_id: string | null
           fecha_pago: string
           id: string
@@ -858,14 +925,20 @@ export type Database = {
           monto_pagado: number
           mora_pagada: number | null
           notas: string | null
+          numero_cheque: string | null
+          numero_referencia: string | null
           prestamo_id: string
           recibido_por: string | null
+          recibo_numero: string | null
           referencia: string | null
         }
         Insert: {
+          banco_cheque?: string | null
           caja_id?: string | null
           capital_pagado?: number | null
+          cobrador_id?: string | null
           created_at?: string
+          created_by?: string | null
           cuota_id?: string | null
           fecha_pago?: string
           id?: string
@@ -874,14 +947,20 @@ export type Database = {
           monto_pagado: number
           mora_pagada?: number | null
           notas?: string | null
+          numero_cheque?: string | null
+          numero_referencia?: string | null
           prestamo_id: string
           recibido_por?: string | null
+          recibo_numero?: string | null
           referencia?: string | null
         }
         Update: {
+          banco_cheque?: string | null
           caja_id?: string | null
           capital_pagado?: number | null
+          cobrador_id?: string | null
           created_at?: string
+          created_by?: string | null
           cuota_id?: string | null
           fecha_pago?: string
           id?: string
@@ -890,8 +969,11 @@ export type Database = {
           monto_pagado?: number
           mora_pagada?: number | null
           notas?: string | null
+          numero_cheque?: string | null
+          numero_referencia?: string | null
           prestamo_id?: string
           recibido_por?: string | null
+          recibo_numero?: string | null
           referencia?: string | null
         }
         Relationships: [
@@ -918,6 +1000,39 @@ export type Database = {
           },
         ]
       }
+      parametros_sistema: {
+        Row: {
+          categoria: string | null
+          clave: string
+          created_at: string
+          descripcion: string | null
+          id: string
+          tipo: string | null
+          updated_at: string
+          valor: string
+        }
+        Insert: {
+          categoria?: string | null
+          clave: string
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          tipo?: string | null
+          updated_at?: string
+          valor: string
+        }
+        Update: {
+          categoria?: string | null
+          clave?: string
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          tipo?: string | null
+          updated_at?: string
+          valor?: string
+        }
+        Relationships: []
+      }
       prestamos: {
         Row: {
           banco_id: string | null
@@ -925,22 +1040,31 @@ export type Database = {
           cobrador_id: string | null
           comentario: string | null
           created_at: string
+          created_by: string | null
+          cuota_estimada: number | null
           estado: string
           fecha_desembolso: string
           fecha_inicio: string | null
           fecha_vencimiento: string | null
           financiamiento_id: string | null
           frecuencia_pago: string
+          gastos_cierre: number | null
+          gastos_legales: number | null
           id: string
           metodo_amortizacion: string
           monto_aprobado: number
+          monto_pagado: number | null
           nota_credito_id: string | null
           notas: string | null
           numero_prestamo: string
           oficial_credito_id: string
           plazo_meses: number
+          proposito: string | null
+          saldo_pendiente: number | null
           solicitud_id: string | null
           tasa_interes: number
+          tipo_amortizacion: string | null
+          total_cuotas: number | null
           updated_at: string
           zona_id: string | null
         }
@@ -950,22 +1074,31 @@ export type Database = {
           cobrador_id?: string | null
           comentario?: string | null
           created_at?: string
+          created_by?: string | null
+          cuota_estimada?: number | null
           estado?: string
           fecha_desembolso?: string
           fecha_inicio?: string | null
           fecha_vencimiento?: string | null
           financiamiento_id?: string | null
           frecuencia_pago?: string
+          gastos_cierre?: number | null
+          gastos_legales?: number | null
           id?: string
           metodo_amortizacion?: string
           monto_aprobado: number
+          monto_pagado?: number | null
           nota_credito_id?: string | null
           notas?: string | null
           numero_prestamo: string
           oficial_credito_id: string
           plazo_meses: number
+          proposito?: string | null
+          saldo_pendiente?: number | null
           solicitud_id?: string | null
           tasa_interes: number
+          tipo_amortizacion?: string | null
+          total_cuotas?: number | null
           updated_at?: string
           zona_id?: string | null
         }
@@ -975,22 +1108,31 @@ export type Database = {
           cobrador_id?: string | null
           comentario?: string | null
           created_at?: string
+          created_by?: string | null
+          cuota_estimada?: number | null
           estado?: string
           fecha_desembolso?: string
           fecha_inicio?: string | null
           fecha_vencimiento?: string | null
           financiamiento_id?: string | null
           frecuencia_pago?: string
+          gastos_cierre?: number | null
+          gastos_legales?: number | null
           id?: string
           metodo_amortizacion?: string
           monto_aprobado?: number
+          monto_pagado?: number | null
           nota_credito_id?: string | null
           notas?: string | null
           numero_prestamo?: string
           oficial_credito_id?: string
           plazo_meses?: number
+          proposito?: string | null
+          saldo_pendiente?: number | null
           solicitud_id?: string | null
           tasa_interes?: number
+          tipo_amortizacion?: string | null
+          total_cuotas?: number | null
           updated_at?: string
           zona_id?: string | null
         }
@@ -1163,13 +1305,19 @@ export type Database = {
       }
       solicitudes: {
         Row: {
+          aprobado_por: string | null
           cliente_id: string
           comentarios_evaluacion: string | null
           created_at: string
+          created_by: string | null
           estado: string
           evaluacion_automatica: string | null
           evaluado_por: string | null
+          fecha_aprobacion: string | null
           fecha_evaluacion: string | null
+          fecha_solicitud: string | null
+          foto_adjunto: string | null
+          foto_cedula: string | null
           frecuencia_pago: string
           garantia_anio: number | null
           garantia_color: string | null
@@ -1187,8 +1335,12 @@ export type Database = {
           garantia_tamano: string | null
           garantia_tipo_propiedad: string | null
           garantia_valor_estimado: number | null
+          gastos_cierre: number | null
+          gastos_legales: number | null
           id: string
+          monto_aprobado: number | null
           monto_solicitado: number
+          notas: string | null
           numero_solicitud: string
           oficial_credito_id: string
           plazo_meses: number
@@ -1197,17 +1349,24 @@ export type Database = {
           score_al_solicitar: number | null
           tasa_interes_sugerida: number | null
           tiene_garantia: boolean
+          tipo_amortizacion: string | null
           tipo_garantia: string | null
           updated_at: string
         }
         Insert: {
+          aprobado_por?: string | null
           cliente_id: string
           comentarios_evaluacion?: string | null
           created_at?: string
+          created_by?: string | null
           estado?: string
           evaluacion_automatica?: string | null
           evaluado_por?: string | null
+          fecha_aprobacion?: string | null
           fecha_evaluacion?: string | null
+          fecha_solicitud?: string | null
+          foto_adjunto?: string | null
+          foto_cedula?: string | null
           frecuencia_pago: string
           garantia_anio?: number | null
           garantia_color?: string | null
@@ -1225,8 +1384,12 @@ export type Database = {
           garantia_tamano?: string | null
           garantia_tipo_propiedad?: string | null
           garantia_valor_estimado?: number | null
+          gastos_cierre?: number | null
+          gastos_legales?: number | null
           id?: string
+          monto_aprobado?: number | null
           monto_solicitado: number
+          notas?: string | null
           numero_solicitud: string
           oficial_credito_id: string
           plazo_meses: number
@@ -1235,17 +1398,24 @@ export type Database = {
           score_al_solicitar?: number | null
           tasa_interes_sugerida?: number | null
           tiene_garantia?: boolean
+          tipo_amortizacion?: string | null
           tipo_garantia?: string | null
           updated_at?: string
         }
         Update: {
+          aprobado_por?: string | null
           cliente_id?: string
           comentarios_evaluacion?: string | null
           created_at?: string
+          created_by?: string | null
           estado?: string
           evaluacion_automatica?: string | null
           evaluado_por?: string | null
+          fecha_aprobacion?: string | null
           fecha_evaluacion?: string | null
+          fecha_solicitud?: string | null
+          foto_adjunto?: string | null
+          foto_cedula?: string | null
           frecuencia_pago?: string
           garantia_anio?: number | null
           garantia_color?: string | null
@@ -1263,8 +1433,12 @@ export type Database = {
           garantia_tamano?: string | null
           garantia_tipo_propiedad?: string | null
           garantia_valor_estimado?: number | null
+          gastos_cierre?: number | null
+          gastos_legales?: number | null
           id?: string
+          monto_aprobado?: number | null
           monto_solicitado?: number
+          notas?: string | null
           numero_solicitud?: string
           oficial_credito_id?: string
           plazo_meses?: number
@@ -1273,6 +1447,7 @@ export type Database = {
           score_al_solicitar?: number | null
           tasa_interes_sugerida?: number | null
           tiene_garantia?: boolean
+          tipo_amortizacion?: string | null
           tipo_garantia?: string | null
           updated_at?: string
         }
@@ -1285,6 +1460,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sync_queue: {
+        Row: {
+          attempts: number | null
+          created_at: string
+          data: Json
+          error: string | null
+          id: string
+          operation: string
+          record_id: string
+          status: string
+          synced_at: string | null
+          table_name: string
+        }
+        Insert: {
+          attempts?: number | null
+          created_at?: string
+          data?: Json
+          error?: string | null
+          id?: string
+          operation: string
+          record_id: string
+          status?: string
+          synced_at?: string | null
+          table_name: string
+        }
+        Update: {
+          attempts?: number | null
+          created_at?: string
+          data?: Json
+          error?: string | null
+          id?: string
+          operation?: string
+          record_id?: string
+          status?: string
+          synced_at?: string | null
+          table_name?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
