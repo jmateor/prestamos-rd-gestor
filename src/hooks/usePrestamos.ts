@@ -66,6 +66,12 @@ export interface Pago {
   metodo_pago: string;
   referencia: string;
   notas: string;
+  numero_cheque: string | null;
+  banco_cheque: string | null;
+  numero_referencia: string | null;
+  cobrador_id: string | null;
+  recibo_numero: string | null;
+  created_by: string | null;
   created_at: string;
 }
 
