@@ -339,6 +339,82 @@ function CatalogosTab() {
   );
 }
 
+// ── Tab: Parámetros del Sistema ───────────────────────────────────────────────
+
+const categoriaLabel: Record<string, string> = {
+  tasas: '📊 Tasas',
+  moras: '⚠️ Moras',
+  gastos: '💰 Gastos',
+  prestamos: '📋 Préstamos',
+  empresa: '🏢 Empresa',
+  operaciones: '⚙️ Operaciones',
+};
+
+function ParametrosTab() {
+  const { data: parametros, isLoading } = useParametrosSistema();
+  const actualizar = useActualizarParametro();
+  const [editValues, setEditValues] = useState<Record<string, string>>({});
+
+  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+
+  // Group by categoria
+  const grouped = new Map<string, typeof parametros>();
+  for (const p of parametros ?? []) {
+    const cat = p.categoria ?? 'otros';
+    if (!grouped.has(cat)) grouped.set(cat, []);
+    grouped.get(cat)!.push(p);
+  }
+
+  return (
+    <div className="space-y-4">
+      {[...grouped.entries()].map(([cat, params]) => (
+        <Card key={cat}>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">{categoriaLabel[cat] ?? cat}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {params!.map((p) => {
+              const edited = editValues[p.id] !== undefined;
+              const currentVal = edited ? editValues[p.id] : p.valor;
+              return (
+                <div key={p.id} className="flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{p.descripcion || p.clave}</p>
+                    <p className="text-xs text-muted-foreground">{p.clave}</p>
+                  </div>
+                  <Input
+                    className="max-w-[200px] h-8 text-sm"
+                    type={p.tipo === 'numero' ? 'number' : 'text'}
+                    value={currentVal}
+                    onChange={(e) => setEditValues(prev => ({ ...prev, [p.id]: e.target.value }))}
+                  />
+                  {edited && (
+                    <Button
+                      size="sm"
+                      className="h-8 gap-1"
+                      disabled={actualizar.isPending}
+                      onClick={() => {
+                        actualizar.mutate({ id: p.id, valor: editValues[p.id] });
+                        setEditValues(prev => {
+                          const n = { ...prev };
+                          delete n[p.id];
+                          return n;
+                        });
+                      }}
+                    >
+                      <Save className="h-3 w-3" /> Guardar
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 export default function Ajustes() {
@@ -348,13 +424,16 @@ export default function Ajustes() {
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <Settings className="h-6 w-6" /> Ajustes del Sistema
         </h1>
-        <p className="text-muted-foreground">Gestión de usuarios, roles, tasas y catálogos</p>
+        <p className="text-muted-foreground">Gestión de usuarios, roles, tasas, parámetros y catálogos</p>
       </div>
 
       <Tabs defaultValue="usuarios">
         <TabsList>
           <TabsTrigger value="usuarios" className="gap-1.5">
             <Users className="h-4 w-4" /> Usuarios
+          </TabsTrigger>
+          <TabsTrigger value="parametros" className="gap-1.5">
+            <SlidersHorizontal className="h-4 w-4" /> Parámetros
           </TabsTrigger>
           <TabsTrigger value="financiamientos" className="gap-1.5">
             <Landmark className="h-4 w-4" /> Financiamientos
@@ -366,6 +445,9 @@ export default function Ajustes() {
 
         <TabsContent value="usuarios" className="mt-4">
           <UsuariosTab />
+        </TabsContent>
+        <TabsContent value="parametros" className="mt-4">
+          <ParametrosTab />
         </TabsContent>
         <TabsContent value="financiamientos" className="mt-4">
           <FinanciamientosTab />
