@@ -16,11 +16,21 @@ export interface Prestamo {
   plazo_meses: number;
   frecuencia_pago: string;
   metodo_amortizacion: string;
+  tipo_amortizacion: string;
   estado: string;
   fecha_desembolso: string;
   fecha_vencimiento: string | null;
+  fecha_inicio: string | null;
   oficial_credito_id: string;
   notas: string;
+  cuota_estimada: number | null;
+  total_cuotas: number | null;
+  monto_pagado: number;
+  saldo_pendiente: number | null;
+  gastos_legales: number;
+  gastos_cierre: number;
+  proposito: string | null;
+  created_by: string | null;
   created_at: string;
   updated_at: string;
   // joined
