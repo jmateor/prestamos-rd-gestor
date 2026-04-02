@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Plus, Settings, Users, Landmark, MapPin, UserCheck, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Settings, Users, Landmark, MapPin, UserCheck, Trash2, Save, SlidersHorizontal } from 'lucide-react';
 import {
   useUsuarios, useAsignarRol, useRemoverRol,
   useFinanciamientos, useCrearFinanciamiento, useActualizarFinanciamiento,
@@ -15,6 +15,7 @@ import {
   useCobradores, useCrearCobrador,
   useBancos, useCrearBanco,
 } from '@/hooks/useAjustes';
+import { useParametrosSistema, useActualizarParametro } from '@/hooks/useParametrosSistema';
 
 const ROLES = ['admin', 'oficial_credito', 'cajero', 'supervisor'] as const;
 const rolLabel: Record<string, string> = {
