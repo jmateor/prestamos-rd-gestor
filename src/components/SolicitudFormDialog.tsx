@@ -223,7 +223,7 @@ export function SolicitudFormDialog() {
                 <FormItem><FormLabel>Monto (RD$) *</FormLabel><FormControl><Input type="number" min={1} {...field} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="plazo_meses" render={({ field }) => (
-                <FormItem><FormLabel>Plazo (meses) *</FormLabel><FormControl><Input type="number" min={1} {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Cuotas *</FormLabel><FormControl><Input type="number" min={1} {...field} /></FormControl><FormMessage /></FormItem>
               )} />
             </div>
 
