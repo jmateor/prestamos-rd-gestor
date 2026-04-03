@@ -87,6 +87,7 @@ export function ClienteEditFormDialog({ cliente, open, onOpenChange }: Props) {
       banco_nombre: cliente.banco_nombre || '',
       numero_cuenta: cliente.numero_cuenta || '',
       notas: cliente.notas || '',
+      nota_bloqueo: (cliente as any).nota_bloqueo || '',
     },
   });
 
