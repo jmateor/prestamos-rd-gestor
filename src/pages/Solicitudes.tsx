@@ -113,7 +113,7 @@ export default function Solicitudes() {
                           : <span className="text-muted-foreground italic">—</span>}
                       </TableCell>
                       <TableCell>{formatCurrency(sol.monto_solicitado)}</TableCell>
-                      <TableCell>{sol.plazo_meses} meses</TableCell>
+                      <TableCell>{sol.plazo_meses}</TableCell>
                       <TableCell>{frecuenciaLabel[sol.frecuencia_pago] ?? sol.frecuencia_pago}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className={badge.class}>
