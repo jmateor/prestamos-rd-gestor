@@ -224,7 +224,48 @@ export default function Dashboard() {
           )}
         </CardContent>
       </Card>
-      {/* Advanced KPIs */}
+      {/* Préstamos a Vencer */}
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <CalendarClock className="h-5 w-5 text-warning" /> Préstamos a Vencer (Próximos 7 días)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {!prestamosAVencer?.length ? (
+            <p className="text-sm text-muted-foreground text-center py-4">No hay cuotas próximas a vencer.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Préstamo</TableHead>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Cuota #</TableHead>
+                  <TableHead>Vencimiento</TableHead>
+                  <TableHead>Monto</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {prestamosAVencer.map((c: any) => {
+                  const p = c.prestamos;
+                  const cl = p?.clientes;
+                  return (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-mono text-sm">{p?.numero_prestamo || '—'}</TableCell>
+                      <TableCell>{cl ? `${cl.primer_nombre} ${cl.primer_apellido}` : '—'}</TableCell>
+                      <TableCell>{c.numero_cuota}</TableCell>
+                      <TableCell>{formatDate(c.fecha_vencimiento)}</TableCell>
+                      <TableCell className="font-semibold">{formatCurrency(c.monto_cuota)}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Préstamos por Cobrar (Advanced KPIs) */}
       <DashboardKPIs />
     </div>
   );

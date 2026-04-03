@@ -40,6 +40,7 @@ export interface Cliente {
   numero_cuenta: string;
   credit_score: number | null;
   nivel_riesgo: string | null;
+  nota_bloqueo: string;
   latitud: number | null;
   longitud: number | null;
   created_at: string;
