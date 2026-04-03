@@ -83,8 +83,8 @@ export default function Solicitudes() {
                   <TableHead>N° Solicitud</TableHead>
                   <TableHead>Cliente</TableHead>
                   <TableHead>Monto</TableHead>
+                  <TableHead>Cuotas</TableHead>
                   <TableHead>Plazo</TableHead>
-                  <TableHead>Frecuencia</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Fecha</TableHead>
                 </TableRow>
