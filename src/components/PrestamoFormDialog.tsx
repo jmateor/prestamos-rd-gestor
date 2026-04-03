@@ -7,13 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, ShieldAlert } from 'lucide-react';
 import { useCreatePrestamo } from '@/hooks/usePrestamos';
 import { calcAmortizacion, totalCuotas } from '@/lib/amortizacion';
 import { formatCurrency } from '@/lib/format';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useUserRole } from '@/hooks/useUserRole';
 
 const schema = z.object({
   solicitud_id:        z.string().optional(),
@@ -61,6 +63,7 @@ export function PrestamoFormDialog() {
   const [open, setOpen] = useState(false);
   const createPrestamo = useCreatePrestamo();
   const { data: solicitudes, isLoading: loadingSolicitudes } = useSolicitudesAprobadas();
+  const { isAdmin } = useUserRole();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -173,7 +176,7 @@ export function PrestamoFormDialog() {
               </FormItem>
             )} />
 
-            {/* Cliente info card */}
+            {/* Cliente info card + blocked check */}
             {cliente && (
               <div className="rounded-md border bg-muted/30 p-3 text-sm space-y-1">
                 <p className="font-medium text-foreground">
@@ -184,6 +187,16 @@ export function PrestamoFormDialog() {
                   <span>Tel: {cliente.telefono}</span>
                 </div>
               </div>
+            )}
+
+            {/* Blocked client alert */}
+            {selectedSol && (selectedSol as any).clientes?.estado === 'bloqueado' && !isAdmin && (
+              <Alert variant="destructive">
+                <ShieldAlert className="h-4 w-4" />
+                <AlertDescription>
+                  Este cliente está bloqueado. Debe comunicarse con el administrador o ingresar clave autorizada para crear préstamos.
+                </AlertDescription>
+              </Alert>
             )}
 
             {/* Hidden cliente_id */}
@@ -203,7 +216,7 @@ export function PrestamoFormDialog() {
                 </FormItem>
               )} />
               <FormField control={form.control} name="plazo_meses" render={({ field }) => (
-                <FormItem><FormLabel>Plazo (meses) *</FormLabel>
+                <FormItem><FormLabel>Cuotas *</FormLabel>
                   <FormControl><Input type="number" min={1} {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
@@ -218,7 +231,7 @@ export function PrestamoFormDialog() {
 
             <div className="grid grid-cols-2 gap-3">
               <FormField control={form.control} name="frecuencia_pago" render={({ field }) => (
-                <FormItem><FormLabel>Frecuencia</FormLabel>
+                <FormItem><FormLabel>Plazo</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent>
@@ -268,7 +281,7 @@ export function PrestamoFormDialog() {
 
             <div className="flex justify-end gap-2 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-              <Button type="submit" disabled={createPrestamo.isPending || !selectedSolicitudId}>
+              <Button type="submit" disabled={createPrestamo.isPending || !selectedSolicitudId || ((selectedSol as any)?.clientes?.estado === 'bloqueado' && !isAdmin)}>
                 {createPrestamo.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Creando...</> : 'Desembolsar'}
               </Button>
             </div>

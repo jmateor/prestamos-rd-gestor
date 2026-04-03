@@ -222,6 +222,7 @@ export type Database = {
           lugar_trabajo: string | null
           nacionalidad: string | null
           nivel_riesgo: string | null
+          nota_bloqueo: string | null
           notas: string | null
           numero_cuenta: string | null
           otros_ingresos: number | null
@@ -266,6 +267,7 @@ export type Database = {
           lugar_trabajo?: string | null
           nacionalidad?: string | null
           nivel_riesgo?: string | null
+          nota_bloqueo?: string | null
           notas?: string | null
           numero_cuenta?: string | null
           otros_ingresos?: number | null
@@ -310,6 +312,7 @@ export type Database = {
           lugar_trabajo?: string | null
           nacionalidad?: string | null
           nivel_riesgo?: string | null
+          nota_bloqueo?: string | null
           notas?: string | null
           numero_cuenta?: string | null
           otros_ingresos?: number | null
@@ -362,6 +365,38 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      contactos_sociales: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          id: string
+          tipo: string
+          valor: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          id?: string
+          tipo?: string
+          valor?: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          tipo?: string
+          valor?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contactos_sociales_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       conyuges_cliente: {
         Row: {

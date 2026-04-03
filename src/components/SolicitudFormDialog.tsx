@@ -223,13 +223,13 @@ export function SolicitudFormDialog() {
                 <FormItem><FormLabel>Monto (RD$) *</FormLabel><FormControl><Input type="number" min={1} {...field} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="plazo_meses" render={({ field }) => (
-                <FormItem><FormLabel>Plazo (meses) *</FormLabel><FormControl><Input type="number" min={1} {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Cuotas *</FormLabel><FormControl><Input type="number" min={1} {...field} /></FormControl><FormMessage /></FormItem>
               )} />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <FormField control={form.control} name="frecuencia_pago" render={({ field }) => (
-                <FormItem><FormLabel>Frecuencia *</FormLabel>
+                <FormItem><FormLabel>Plazo *</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent>

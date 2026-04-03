@@ -3,16 +3,18 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, UserCheck, UserX, Trash2, CreditCard, FileText, Users, Briefcase, DollarSign, AlertTriangle, Ban, MapPin, ShieldCheck } from 'lucide-react';
+import { Edit, UserCheck, UserX, Trash2, CreditCard, FileText, Users, Briefcase, DollarSign, AlertTriangle, Ban, MapPin, ShieldCheck, Facebook, Instagram, MessageCircle, Plus, Save } from 'lucide-react';
 import type { Cliente } from '@/hooks/useClientes';
 import { useUpdateCliente, useDeleteCliente } from '@/hooks/useClientes';
 import { useHistorialCliente } from '@/hooks/useHistorialCliente';
 import { usePerfilCrediticio, useReferencias, useDependientes, useConyuge } from '@/hooks/useClienteProfile';
 import { useClienteGarantias } from '@/hooks/useSolicitudes';
+import { useContactosSociales, useUpsertContactoSocial, useDeleteContactoSocial } from '@/hooks/useContactosSociales';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { ClienteEditFormDialog } from '@/components/ClienteEditFormDialog';
 import { ClienteDocumentosTab } from '@/components/ClienteDocumentosTab';
@@ -42,6 +44,8 @@ export function ClienteProfileSheet({ cliente, open, onOpenChange }: Props) {
   const { data: dependientes } = useDependientes(cliente?.id);
   const { data: conyuge } = useConyuge(cliente?.id);
   const { data: garantias } = useClienteGarantias(cliente?.id);
+  const { data: contactosSociales } = useContactosSociales(cliente?.id);
+  const upsertContacto = useUpsertContactoSocial();
 
   if (!cliente) return null;
 
@@ -94,6 +98,9 @@ export function ClienteProfileSheet({ cliente, open, onOpenChange }: Props) {
                     <CreditScoreIndicator clienteId={cliente.id} compact />
                   )}
                 </div>
+                {cliente.estado === 'bloqueado' && cliente.nota_bloqueo && (
+                  <p className="text-xs text-destructive mt-1">Motivo: {cliente.nota_bloqueo}</p>
+                )}
               </div>
             </div>
             
@@ -230,6 +237,36 @@ export function ClienteProfileSheet({ cliente, open, onOpenChange }: Props) {
                   <Field label="Teléfono" value={cliente.telefono} />
                   <Field label="Teléfono 2" value={cliente.telefono2 || '—'} />
                   <Field label="Email" value={cliente.email || '—'} />
+                </CardContent>
+              </Card>
+              {/* Redes Sociales */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">Redes Sociales</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {(['facebook', 'instagram', 'whatsapp'] as const).map((tipo) => {
+                    const existing = contactosSociales?.find((c) => c.tipo === tipo);
+                    const icons = { facebook: <Facebook className="h-4 w-4" />, instagram: <Instagram className="h-4 w-4" />, whatsapp: <MessageCircle className="h-4 w-4" /> };
+                    const labels = { facebook: 'Facebook', instagram: 'Instagram', whatsapp: 'WhatsApp Adicional' };
+                    return (
+                      <div key={tipo} className="flex items-center gap-2">
+                        {icons[tipo]}
+                        <span className="text-xs text-muted-foreground w-24">{labels[tipo]}</span>
+                        <Input
+                          className="h-8 text-sm flex-1"
+                          placeholder={`${labels[tipo]}...`}
+                          defaultValue={existing?.valor || ''}
+                          onBlur={(e) => {
+                            const val = e.target.value.trim();
+                            if (val !== (existing?.valor || '')) {
+                              upsertContacto.mutate({ id: existing?.id, cliente_id: cliente.id, tipo, valor: val });
+                            }
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
                 </CardContent>
               </Card>
               <Card>

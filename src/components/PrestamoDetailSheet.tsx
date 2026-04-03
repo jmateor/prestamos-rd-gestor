@@ -345,8 +345,8 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                   <div><p className="text-muted-foreground">Monto</p><p className="font-semibold">{formatCurrency(prestamo.monto_aprobado)}</p></div>
                   <div><p className="text-muted-foreground">Tasa</p><p className="font-semibold">{prestamo.tasa_interes}% / mes</p></div>
-                  <div><p className="text-muted-foreground">Plazo</p><p className="font-semibold">{prestamo.plazo_meses} meses</p></div>
-                  <div><p className="text-muted-foreground">Frecuencia</p><p className="font-semibold">{frecuenciaLabel[prestamo.frecuencia_pago]}</p></div>
+                  <div><p className="text-muted-foreground">Cuotas</p><p className="font-semibold">{prestamo.plazo_meses}</p></div>
+                  <div><p className="text-muted-foreground">Plazo</p><p className="font-semibold">{frecuenciaLabel[prestamo.frecuencia_pago]}</p></div>
                   <div><p className="text-muted-foreground">Método</p><p className="font-semibold">{metodoLabel[prestamo.metodo_amortizacion]}</p></div>
                   <div><p className="text-muted-foreground">Desembolso</p><p className="font-semibold">{formatDate(prestamo.fecha_desembolso)}</p></div>
                   <div><p className="text-muted-foreground">Vencimiento</p><p className="font-semibold">{prestamo.fecha_vencimiento ? formatDate(prestamo.fecha_vencimiento) : '—'}</p></div>

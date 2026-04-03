@@ -46,7 +46,7 @@ export function generarCronogramaPDF(data: CronogramaData) {
     doc.setFont('helvetica', 'normal');
     doc.text(`Préstamo: ${data.numero_prestamo} | Cliente: ${data.cliente_nombre} (${data.cliente_cedula})`, pw / 2, y, { align: 'center' });
     y += 5;
-    doc.text(`Monto: ${formatCurrency(data.monto_aprobado)} | Tasa: ${data.tasa_interes}% | Plazo: ${data.plazo_meses}m | Frecuencia: ${frecLabel[data.frecuencia_pago] ?? data.frecuencia_pago} | Método: ${metodoLabel[data.metodo_amortizacion] ?? data.metodo_amortizacion}`, pw / 2, y, { align: 'center' });
+    doc.text(`Monto: ${formatCurrency(data.monto_aprobado)} | Tasa: ${data.tasa_interes}% | Cuotas: ${data.plazo_meses} | Plazo: ${frecLabel[data.frecuencia_pago] ?? data.frecuencia_pago} | Método: ${metodoLabel[data.metodo_amortizacion] ?? data.metodo_amortizacion}`, pw / 2, y, { align: 'center' });
     y += 6;
     doc.setDrawColor(150);
     doc.line(margin, y, pw - margin, y);

@@ -41,6 +41,7 @@ const schema = z.object({
   banco_nombre: z.string().default(''),
   numero_cuenta: z.string().default(''),
   notas: z.string().default(''),
+  nota_bloqueo: z.string().default(''),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -86,6 +87,7 @@ export function ClienteEditFormDialog({ cliente, open, onOpenChange }: Props) {
       banco_nombre: cliente.banco_nombre || '',
       numero_cuenta: cliente.numero_cuenta || '',
       notas: cliente.notas || '',
+      nota_bloqueo: (cliente as any).nota_bloqueo || '',
     },
   });
 
@@ -239,6 +241,9 @@ export function ClienteEditFormDialog({ cliente, open, onOpenChange }: Props) {
                 </div>
                 <FormField control={form.control} name="notas" render={({ field }) => (
                   <FormItem><FormLabel>Notas</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="nota_bloqueo" render={({ field }) => (
+                  <FormItem><FormLabel>Nota de Bloqueo / Rechazo</FormLabel><FormControl><Textarea placeholder="Motivo por el cual fue bloqueado o rechazado..." {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
               </TabsContent>
 
