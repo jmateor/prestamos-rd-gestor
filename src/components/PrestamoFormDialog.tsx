@@ -7,13 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, ShieldAlert } from 'lucide-react';
 import { useCreatePrestamo } from '@/hooks/usePrestamos';
 import { calcAmortizacion, totalCuotas } from '@/lib/amortizacion';
 import { formatCurrency } from '@/lib/format';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useUserRole } from '@/hooks/useUserRole';
 
 const schema = z.object({
   solicitud_id:        z.string().optional(),
