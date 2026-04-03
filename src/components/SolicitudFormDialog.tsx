@@ -229,7 +229,7 @@ export function SolicitudFormDialog() {
 
             <div className="grid grid-cols-2 gap-3">
               <FormField control={form.control} name="frecuencia_pago" render={({ field }) => (
-                <FormItem><FormLabel>Frecuencia *</FormLabel>
+                <FormItem><FormLabel>Plazo *</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent>

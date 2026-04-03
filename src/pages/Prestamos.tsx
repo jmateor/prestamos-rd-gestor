@@ -88,7 +88,7 @@ export default function Prestamos() {
                   <TableHead>Cliente</TableHead>
                   <TableHead>Monto</TableHead>
                   <TableHead>Tasa</TableHead>
-                  <TableHead>Frecuencia</TableHead>
+                  <TableHead>Plazo</TableHead>
                   <TableHead>Desembolso</TableHead>
                   <TableHead>Vencimiento</TableHead>
                   <TableHead>Estado</TableHead>

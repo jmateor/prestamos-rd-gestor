@@ -151,8 +151,8 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
               <CardHeader className="py-3"><CardTitle className="text-sm">Datos del Préstamo</CardTitle></CardHeader>
               <CardContent className="grid grid-cols-2 gap-2 text-sm pb-3">
                 <div><span className="text-muted-foreground">Monto:</span> {formatCurrency(solicitud.monto_solicitado)}</div>
-                <div><span className="text-muted-foreground">Plazo:</span> {solicitud.plazo_meses} meses</div>
-                <div><span className="text-muted-foreground">Frecuencia:</span> {frecuenciaLabel[solicitud.frecuencia_pago]}</div>
+                <div><span className="text-muted-foreground">Cuotas:</span> {solicitud.plazo_meses}</div>
+                <div><span className="text-muted-foreground">Plazo:</span> {frecuenciaLabel[solicitud.frecuencia_pago]}</div>
                 <div><span className="text-muted-foreground">Tasa:</span> {solicitud.tasa_interes_sugerida}%</div>
                 <div className="col-span-2"><span className="text-muted-foreground">Propósito:</span> {solicitud.proposito}</div>
                 <div><span className="text-muted-foreground">Tipo:</span> {sol.tiene_garantia ? 'Con Garantía' : 'Personal (sin garantía)'}</div>
