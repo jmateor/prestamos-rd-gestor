@@ -41,6 +41,7 @@ const schema = z.object({
   banco_nombre: z.string().default(''),
   numero_cuenta: z.string().default(''),
   notas: z.string().default(''),
+  nota_bloqueo: z.string().default(''),
 });
 
 type FormValues = z.infer<typeof schema>;
