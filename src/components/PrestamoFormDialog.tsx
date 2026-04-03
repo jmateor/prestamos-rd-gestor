@@ -63,6 +63,7 @@ export function PrestamoFormDialog() {
   const [open, setOpen] = useState(false);
   const createPrestamo = useCreatePrestamo();
   const { data: solicitudes, isLoading: loadingSolicitudes } = useSolicitudesAprobadas();
+  const { isAdmin } = useUserRole();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),

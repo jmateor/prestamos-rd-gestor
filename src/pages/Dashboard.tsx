@@ -139,7 +139,7 @@ export default function Dashboard() {
                 <Badge variant="destructive">{risk?.clientesMora ?? 0}</Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Préstamos en mora</span>
+                <span className="text-sm text-muted-foreground">Préstamos por cobrar</span>
                 <Badge variant="destructive">{risk?.prestamosEnMora ?? 0}</Badge>
               </div>
               <div className="flex justify-between items-center">
