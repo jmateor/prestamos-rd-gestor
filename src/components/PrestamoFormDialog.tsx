@@ -176,7 +176,7 @@ export function PrestamoFormDialog() {
               </FormItem>
             )} />
 
-            {/* Cliente info card */}
+            {/* Cliente info card + blocked check */}
             {cliente && (
               <div className="rounded-md border bg-muted/30 p-3 text-sm space-y-1">
                 <p className="font-medium text-foreground">
@@ -187,6 +187,16 @@ export function PrestamoFormDialog() {
                   <span>Tel: {cliente.telefono}</span>
                 </div>
               </div>
+            )}
+
+            {/* Blocked client alert */}
+            {selectedSol && (selectedSol as any).clientes?.estado === 'bloqueado' && !isAdmin && (
+              <Alert variant="destructive">
+                <ShieldAlert className="h-4 w-4" />
+                <AlertDescription>
+                  Este cliente está bloqueado. Debe comunicarse con el administrador o ingresar clave autorizada para crear préstamos.
+                </AlertDescription>
+              </Alert>
             )}
 
             {/* Hidden cliente_id */}
