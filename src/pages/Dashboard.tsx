@@ -1,8 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DollarSign, Users, TrendingUp, AlertTriangle, Landmark, Shield, ShieldAlert, ShieldCheck, Trophy, Loader2 } from 'lucide-react';
-import { formatCurrency } from '@/lib/format';
+import { DollarSign, Users, TrendingUp, AlertTriangle, Landmark, Shield, ShieldAlert, ShieldCheck, Trophy, Loader2, CalendarClock } from 'lucide-react';
+import { formatCurrency, formatDate } from '@/lib/format';
 import { useDashboardRiskMetrics, useTopClientes, useClientesAltoRiesgo } from '@/hooks/useCreditScore';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +12,29 @@ export default function Dashboard() {
   const { data: risk, isLoading: loadingRisk } = useDashboardRiskMetrics();
   const { data: topClientes } = useTopClientes();
   const { data: clientesRiesgo } = useClientesAltoRiesgo();
+
+  // Préstamos a vencer (próximos 7 días)
+  const { data: prestamosAVencer } = useQuery({
+    queryKey: ['prestamos-a-vencer'],
+    queryFn: async () => {
+      const today = new Date();
+      const in7days = new Date(today);
+      in7days.setDate(in7days.getDate() + 7);
+      const todayStr = today.toISOString().split('T')[0];
+      const futureStr = in7days.toISOString().split('T')[0];
+
+      const { data, error } = await supabase
+        .from('cuotas')
+        .select('id, numero_cuota, fecha_vencimiento, monto_cuota, prestamo_id, prestamos(numero_prestamo, clientes(primer_nombre, primer_apellido))')
+        .eq('estado', 'pendiente')
+        .gte('fecha_vencimiento', todayStr)
+        .lte('fecha_vencimiento', futureStr)
+        .order('fecha_vencimiento')
+        .limit(10);
+      if (error) throw error;
+      return data as any[];
+    },
+  });
 
   // Real metrics from DB
   const { data: realMetrics } = useQuery({
