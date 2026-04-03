@@ -242,6 +242,9 @@ export function ClienteEditFormDialog({ cliente, open, onOpenChange }: Props) {
                 <FormField control={form.control} name="notas" render={({ field }) => (
                   <FormItem><FormLabel>Notas</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
+                <FormField control={form.control} name="nota_bloqueo" render={({ field }) => (
+                  <FormItem><FormLabel>Nota de Bloqueo / Rechazo</FormLabel><FormControl><Textarea placeholder="Motivo por el cual fue bloqueado o rechazado..." {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
               </TabsContent>
 
               <TabsContent value="banco" className="space-y-3 mt-4">
