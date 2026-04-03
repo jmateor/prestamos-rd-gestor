@@ -281,7 +281,7 @@ export function PrestamoFormDialog() {
 
             <div className="flex justify-end gap-2 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-              <Button type="submit" disabled={createPrestamo.isPending || !selectedSolicitudId}>
+              <Button type="submit" disabled={createPrestamo.isPending || !selectedSolicitudId || ((selectedSol as any)?.clientes?.estado === 'bloqueado' && !isAdmin)}>
                 {createPrestamo.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Creando...</> : 'Desembolsar'}
               </Button>
             </div>
