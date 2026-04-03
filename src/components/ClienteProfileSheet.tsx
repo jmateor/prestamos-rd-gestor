@@ -98,6 +98,9 @@ export function ClienteProfileSheet({ cliente, open, onOpenChange }: Props) {
                     <CreditScoreIndicator clienteId={cliente.id} compact />
                   )}
                 </div>
+                {cliente.estado === 'bloqueado' && cliente.nota_bloqueo && (
+                  <p className="text-xs text-destructive mt-1">Motivo: {cliente.nota_bloqueo}</p>
+                )}
               </div>
             </div>
             
