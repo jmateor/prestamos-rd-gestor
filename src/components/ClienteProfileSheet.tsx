@@ -239,6 +239,36 @@ export function ClienteProfileSheet({ cliente, open, onOpenChange }: Props) {
                   <Field label="Email" value={cliente.email || '—'} />
                 </CardContent>
               </Card>
+              {/* Redes Sociales */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">Redes Sociales</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {(['facebook', 'instagram', 'whatsapp'] as const).map((tipo) => {
+                    const existing = contactosSociales?.find((c) => c.tipo === tipo);
+                    const icons = { facebook: <Facebook className="h-4 w-4" />, instagram: <Instagram className="h-4 w-4" />, whatsapp: <MessageCircle className="h-4 w-4" /> };
+                    const labels = { facebook: 'Facebook', instagram: 'Instagram', whatsapp: 'WhatsApp Adicional' };
+                    return (
+                      <div key={tipo} className="flex items-center gap-2">
+                        {icons[tipo]}
+                        <span className="text-xs text-muted-foreground w-24">{labels[tipo]}</span>
+                        <Input
+                          className="h-8 text-sm flex-1"
+                          placeholder={`${labels[tipo]}...`}
+                          defaultValue={existing?.valor || ''}
+                          onBlur={(e) => {
+                            const val = e.target.value.trim();
+                            if (val !== (existing?.valor || '')) {
+                              upsertContacto.mutate({ id: existing?.id, cliente_id: cliente.id, tipo, valor: val });
+                            }
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-sm">Dirección</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-2 gap-2 text-sm">
