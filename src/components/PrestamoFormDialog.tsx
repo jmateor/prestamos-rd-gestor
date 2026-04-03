@@ -216,7 +216,7 @@ export function PrestamoFormDialog() {
                 </FormItem>
               )} />
               <FormField control={form.control} name="plazo_meses" render={({ field }) => (
-                <FormItem><FormLabel>Plazo (meses) *</FormLabel>
+                <FormItem><FormLabel>Cuotas *</FormLabel>
                   <FormControl><Input type="number" min={1} {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
