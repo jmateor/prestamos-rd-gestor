@@ -19,7 +19,6 @@ export interface Solicitud {
   oficial_credito_id: string;
   created_at: string;
   updated_at: string;
-  // Guarantee fields
   tiene_garantia: boolean;
   tipo_garantia: string | null;
   garantia_marca: string;
@@ -39,12 +38,15 @@ export interface Solicitud {
   garantia_estado: string;
   garantia_notas: string;
   porcentaje_prestamo_garantia: number;
-  // joined
+  tipo_amortizacion: string;
+  gastos_legales: number;
+  gastos_cierre: number;
   clientes?: {
     primer_nombre: string;
     primer_apellido: string;
     cedula: string;
     telefono: string;
+    ingreso_mensual?: number;
   };
 }
 
@@ -148,6 +150,9 @@ export interface SolicitudInsert {
   frecuencia_pago: string;
   proposito: string;
   tasa_interes_sugerida: number;
+  tipo_amortizacion?: string;
+  gastos_legales?: number;
+  gastos_cierre?: number;
   tiene_garantia?: boolean;
   tipo_garantia?: string | null;
   garantia_marca?: string;
@@ -196,6 +201,27 @@ export function useCreateSolicitud() {
   });
 }
 
+export function useUpdateSolicitud() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<SolicitudInsert> }) => {
+      const { error } = await (supabase as any)
+        .from('solicitudes')
+        .update(data)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['solicitudes'] });
+      queryClient.invalidateQueries({ queryKey: ['solicitud'] });
+    },
+    onError: (error: any) => {
+      toast.error('Error al actualizar: ' + error.message);
+    },
+  });
+}
+
 export function useUpdateSolicitudEstado() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -209,9 +235,10 @@ export function useUpdateSolicitudEstado() {
         evaluado_por: user!.id,
       };
 
-      // When approved and has guarantee, set guarantee state to active
       if (estado === 'aprobada') {
         updateData.garantia_estado = 'activa';
+        updateData.aprobado_por = user!.id;
+        updateData.fecha_aprobacion = new Date().toISOString();
       }
 
       const { error } = await (supabase as any)
@@ -249,7 +276,6 @@ export function useAddGarante() {
   });
 }
 
-// Get all guarantees for a client (from their solicitudes)
 export function useClienteGarantias(clienteId: string | undefined) {
   return useQuery({
     queryKey: ['cliente_garantias', clienteId],

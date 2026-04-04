@@ -460,7 +460,7 @@ export function SolicitudFormDialog() {
                       <p className="text-xs font-semibold text-muted-foreground uppercase">Datos del Artículo</p>
                       <div className="grid grid-cols-2 gap-3">
                         <FormField control={form.control} name="garantia_nombre_articulo" render={({ field }) => (
-                          <FormItem className="col-span-2"><FormLabel className="text-xs">Nombre del Artículo</FormLabel><FormControl><Input className="h-8 text-sm" placeholder="Ej: Televisor Samsung 65\"" {...field} /></FormControl></FormItem>
+                          <FormItem className="col-span-2"><FormLabel className="text-xs">Nombre del Artículo</FormLabel><FormControl><Input className="h-8 text-sm" placeholder={'Ej: Televisor Samsung 65"'} {...field} /></FormControl></FormItem>
                         )} />
                         <FormField control={form.control} name="garantia_marca" render={({ field }) => (
                           <FormItem><FormLabel className="text-xs">Marca</FormLabel><FormControl><Input className="h-8 text-sm" {...field} /></FormControl></FormItem>
