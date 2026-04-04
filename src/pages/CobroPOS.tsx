@@ -158,24 +158,33 @@ export default function CobroPOS() {
   const montoRecibidoNum = parseFloat(montoRecibido) || 0;
   const devuelta = metodoPago === 'efectivo' ? Math.max(0, montoRecibidoNum - montoPagarNum) : 0;
 
+  // Payment distribution: mora → interés → capital (per installment)
   const distribucion = useMemo(() => {
     let restante = montoPagarNum;
     const result: { cuota: CuotaPOS; capital: number; interes: number; mora: number; total: number }[] = [];
 
     for (const c of cuotasPendientes) {
       if (restante <= 0) break;
-      const pendiente = c.monto_cuota - c.monto_pagado;
+      const pendiente = c.monto_cuota - c.monto_pagado + (c.mora ?? 0);
       const pago = Math.min(restante, pendiente);
-      const ratio = pago / c.monto_cuota;
-      const moraAplicada = Math.min(pago, (c.mora ?? 0) * ratio);
-      const interesAplicado = c.interes * ratio;
-      const capitalAplicado = pago - interesAplicado - moraAplicada;
+      let remainder = pago;
+
+      // 1. Mora first (per cuota, not global)
+      const moraAplicada = Math.min(remainder, c.mora ?? 0);
+      remainder -= moraAplicada;
+
+      // 2. Interés
+      const interesAplicado = Math.min(remainder, c.interes);
+      remainder -= interesAplicado;
+
+      // 3. Capital
+      const capitalAplicado = Math.max(0, remainder);
 
       result.push({
         cuota: c,
-        capital: Math.max(0, capitalAplicado),
-        interes: Math.max(0, interesAplicado),
-        mora: Math.max(0, moraAplicada),
+        capital: capitalAplicado,
+        interes: interesAplicado,
+        mora: moraAplicada,
         total: pago,
       });
       restante -= pago;
