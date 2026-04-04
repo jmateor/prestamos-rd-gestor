@@ -115,7 +115,10 @@ export function PrestamoFormDialog() {
   })();
 
   const onSubmit = async (values: FormValues) => {
-    await createPrestamo.mutateAsync({
+    const gastosLeg = (selectedSol as any)?.gastos_legales || 0;
+    const gastosCie = (selectedSol as any)?.gastos_cierre || 0;
+
+    const prestamo = await createPrestamo.mutateAsync({
       solicitud_id:        values.solicitud_id || undefined,
       cliente_id:          values.cliente_id,
       monto_aprobado:      values.monto_aprobado,
@@ -125,7 +128,31 @@ export function PrestamoFormDialog() {
       metodo_amortizacion: values.metodo_amortizacion,
       fecha_desembolso:    values.fecha_desembolso,
       notas:               values.notas,
+      gastos_legales:      gastosLeg,
+      gastos_cierre:       gastosCie,
     });
+
+    // Generate desembolso PDF
+    if (prestamo && cliente) {
+      const cuotaEst = preview?.cuota ?? 0;
+      const doc = generarDesembolsoPDF({
+        numero_prestamo: prestamo.numero_prestamo || 'N/A',
+        cliente_nombre: `${cliente.primer_nombre} ${cliente.primer_apellido}`,
+        cliente_cedula: cliente.cedula,
+        monto_aprobado: values.monto_aprobado,
+        gastos_legales: gastosLeg,
+        gastos_cierre: gastosCie,
+        monto_neto: values.monto_aprobado - gastosLeg - gastosCie,
+        fecha_desembolso: values.fecha_desembolso,
+        tasa_interes: values.tasa_interes,
+        plazo_meses: values.plazo_meses,
+        frecuencia: values.frecuencia_pago,
+        cuota_estimada: cuotaEst,
+        metodo: values.metodo_amortizacion,
+      });
+      doc.save(`desembolso-${prestamo.numero_prestamo || 'nuevo'}.pdf`);
+    }
+
     form.reset();
     setOpen(false);
   };
