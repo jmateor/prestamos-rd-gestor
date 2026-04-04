@@ -541,6 +541,7 @@ export default function CobroPOS() {
                       <SelectContent>
                         <SelectItem value="efectivo">💵 Efectivo</SelectItem>
                         <SelectItem value="transferencia">🏦 Transferencia</SelectItem>
+                        <SelectItem value="cheque">📝 Cheque</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
