@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { User, Phone, MapPin, Briefcase } from 'lucide-react';
 import { useUpdateCliente, type Cliente } from '@/hooks/useClientes';
+import { EmpresaAutocomplete } from '@/components/EmpresaAutocomplete';
 
 const schema = z.object({
   primer_nombre: z.string().min(2),
@@ -214,7 +215,16 @@ export function ClienteEditFormDialog({ cliente, open, onOpenChange }: Props) {
               <TabsContent value="laboral" className="space-y-3 mt-4">
                 <div className="grid grid-cols-2 gap-3">
                   <FormField control={form.control} name="lugar_trabajo" render={({ field }) => (
-                    <FormItem><FormLabel>Lugar de Trabajo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Lugar de Trabajo</FormLabel><FormControl>
+                      <EmpresaAutocomplete
+                        value={field.value}
+                        onChange={field.onChange}
+                        onSelect={(emp) => {
+                          form.setValue('direccion_trabajo', emp.direccion_trabajo);
+                          form.setValue('telefono_trabajo', emp.telefono_trabajo);
+                        }}
+                      />
+                    </FormControl><FormMessage /></FormItem>
                   )} />
                   <FormField control={form.control} name="cargo" render={({ field }) => (
                     <FormItem><FormLabel>Cargo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>

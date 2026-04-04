@@ -17,6 +17,8 @@ import { useClientes } from '@/hooks/useClientes';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/format';
+import { calcAmortizacion, totalCuotas } from '@/lib/amortizacion';
+import { generarCotizacionPDF } from '@/lib/cotizacionPDF';
 
 const TIPOS_GARANTIA = [
   { value: 'vehiculo', label: 'Vehículo', icon: Car },
@@ -35,6 +37,9 @@ const schema = z.object({
   frecuencia_pago: z.string().min(1, 'Seleccione frecuencia'),
   proposito: z.string().trim().min(3, 'Ingrese el propósito').max(500),
   tasa_interes_sugerida: z.coerce.number().min(0).max(100).default(0),
+  tipo_amortizacion: z.string().default('cuota_fija'),
+  gastos_legales: z.coerce.number().min(0).default(0),
+  gastos_cierre: z.coerce.number().min(0).default(0),
   // Guarantee fields
   tiene_garantia: z.boolean().default(false),
   tipo_garantia: z.string().optional(),
@@ -75,6 +80,9 @@ export function SolicitudFormDialog() {
       frecuencia_pago: 'mensual',
       proposito: '',
       tasa_interes_sugerida: 5,
+      tipo_amortizacion: 'cuota_fija',
+      gastos_legales: 0,
+      gastos_cierre: 0,
       tiene_garantia: false,
       tipo_garantia: '',
       garantia_marca: '',
@@ -99,12 +107,51 @@ export function SolicitudFormDialog() {
   const tipoGarantia = useWatch({ control: form.control, name: 'tipo_garantia' });
   const valorEstimado = useWatch({ control: form.control, name: 'garantia_valor_estimado' });
   const porcentaje = useWatch({ control: form.control, name: 'porcentaje_prestamo_garantia' });
+  const watched = form.watch();
 
   const montoMaxGarantia = (valorEstimado || 0) * ((porcentaje || 70) / 100);
 
   const isVehiculo = tipoGarantia === 'vehiculo' || tipoGarantia === 'motocicleta';
   const isPropiedad = tipoGarantia === 'vivienda' || tipoGarantia === 'terreno';
   const isArticulo = tipoGarantia === 'electrodomestico' || tipoGarantia === 'equipo' || tipoGarantia === 'otro';
+
+  // Preview cuota
+  const preview = (() => {
+    try {
+      if (!watched.monto_solicitado || !watched.plazo_meses) return null;
+      const cuotas = calcAmortizacion(
+        watched.monto_solicitado,
+        (watched.tasa_interes_sugerida || 5) / 100,
+        watched.plazo_meses,
+        watched.frecuencia_pago,
+        watched.tipo_amortizacion || 'cuota_fija',
+        new Date(),
+      );
+      const n = totalCuotas(watched.plazo_meses, watched.frecuencia_pago);
+      const totalInt = cuotas.reduce((a, c) => a + c.interes, 0);
+      return { cuota: cuotas[0]?.monto_cuota ?? 0, total: n, totalInteres: totalInt, totalPagar: cuotas.reduce((a, c) => a + c.monto_cuota, 0) };
+    } catch { return null; }
+  })();
+
+  const montoNeto = (watched.monto_solicitado || 0) - (watched.gastos_legales || 0) - (watched.gastos_cierre || 0);
+
+  const handleCotizacionPDF = () => {
+    const sel = clientes?.find(c => c.id === watched.cliente_id);
+    if (!sel) { toast.error('Seleccione un cliente primero'); return; }
+    const doc = generarCotizacionPDF({
+      cliente_nombre: `${sel.primer_nombre} ${sel.primer_apellido}`,
+      cliente_cedula: sel.cedula,
+      monto: watched.monto_solicitado || 0,
+      tasa_mensual: watched.tasa_interes_sugerida || 5,
+      plazo_meses: watched.plazo_meses || 1,
+      frecuencia: watched.frecuencia_pago || 'mensual',
+      metodo: watched.tipo_amortizacion || 'cuota_fija',
+      gastos_legales: watched.gastos_legales,
+      gastos_cierre: watched.gastos_cierre,
+    });
+    doc.save(`cotizacion-${sel.cedula}.pdf`);
+    toast.success('Cotización PDF generada');
+  };
 
   const handleFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -144,6 +191,9 @@ export function SolicitudFormDialog() {
       frecuencia_pago: values.frecuencia_pago,
       proposito: values.proposito,
       tasa_interes_sugerida: values.tasa_interes_sugerida,
+      tipo_amortizacion: values.tipo_amortizacion,
+      gastos_legales: values.gastos_legales,
+      gastos_cierre: values.gastos_cierre,
       tiene_garantia: values.tiene_garantia,
       tipo_garantia: values.tiene_garantia ? values.tipo_garantia : null,
       garantia_marca: values.garantia_marca || '',
@@ -227,7 +277,7 @@ export function SolicitudFormDialog() {
               )} />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <FormField control={form.control} name="frecuencia_pago" render={({ field }) => (
                 <FormItem><FormLabel>Plazo *</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
@@ -243,11 +293,58 @@ export function SolicitudFormDialog() {
               <FormField control={form.control} name="tasa_interes_sugerida" render={({ field }) => (
                 <FormItem><FormLabel>Tasa Interés (%)</FormLabel><FormControl><Input type="number" min={0} max={100} step={0.5} {...field} /></FormControl><FormMessage /></FormItem>
               )} />
+              <FormField control={form.control} name="tipo_amortizacion" render={({ field }) => (
+                <FormItem><FormLabel>Método</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="cuota_fija">Cuota Fija</SelectItem>
+                      <SelectItem value="interes_simple">Interés Simple</SelectItem>
+                      <SelectItem value="saldo_insoluto">Saldo Insoluto</SelectItem>
+                    </SelectContent>
+                  </Select><FormMessage /></FormItem>
+              )} />
             </div>
+
+            {/* Gastos */}
+            <div className="grid grid-cols-2 gap-3">
+              <FormField control={form.control} name="gastos_legales" render={({ field }) => (
+                <FormItem><FormLabel>Gastos Legales (RD$)</FormLabel><FormControl><Input type="number" min={0} {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={form.control} name="gastos_cierre" render={({ field }) => (
+                <FormItem><FormLabel>Gastos de Cierre (RD$)</FormLabel><FormControl><Input type="number" min={0} {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+            </div>
+
+            {/* Monto neto preview */}
+            {((watched.gastos_legales || 0) + (watched.gastos_cierre || 0)) > 0 && (
+              <div className="rounded-md bg-muted/50 border p-2 text-sm">
+                <span className="text-muted-foreground">Monto neto a desembolsar: </span>
+                <span className="font-semibold">{formatCurrency(montoNeto)}</span>
+              </div>
+            )}
 
             <FormField control={form.control} name="proposito" render={({ field }) => (
               <FormItem><FormLabel>Propósito *</FormLabel><FormControl><Textarea placeholder="¿Para qué será utilizado el préstamo?" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
+
+            {/* Cuota Preview */}
+            {preview && (
+              <div className="rounded-md bg-primary/5 border border-primary/20 p-3 text-sm">
+                <p className="font-medium text-primary mb-1">Vista previa</p>
+                <div className="grid grid-cols-2 gap-1 text-muted-foreground">
+                  <span>Cuota estimada:</span>
+                  <span className="font-semibold text-foreground">{formatCurrency(preview.cuota)}</span>
+                  <span>Total cuotas:</span>
+                  <span className="font-semibold text-foreground">{preview.total}</span>
+                  <span>Total a pagar:</span>
+                  <span className="font-semibold text-foreground">{formatCurrency(preview.totalPagar)}</span>
+                </div>
+                <Button type="button" variant="outline" size="sm" className="mt-2 text-xs" onClick={handleCotizacionPDF}>
+                  📄 Generar Cotización PDF
+                </Button>
+              </div>
+            )}
 
             {/* ── Sección Garantía (Opcional) ── */}
             <Separator />
@@ -342,39 +439,28 @@ export function SolicitudFormDialog() {
                       <p className="text-xs font-semibold text-muted-foreground uppercase">Datos de la Propiedad</p>
                       <div className="grid grid-cols-2 gap-3">
                         <FormField control={form.control} name="garantia_direccion_propiedad" render={({ field }) => (
-                          <FormItem className="col-span-2"><FormLabel className="text-xs">Dirección de la Propiedad</FormLabel><FormControl><Input className="h-8 text-sm" {...field} /></FormControl></FormItem>
+                          <FormItem className="col-span-2"><FormLabel className="text-xs">Dirección</FormLabel><FormControl><Input className="h-8 text-sm" {...field} /></FormControl></FormItem>
                         )} />
                         <FormField control={form.control} name="garantia_tipo_propiedad" render={({ field }) => (
-                          <FormItem><FormLabel className="text-xs">Tipo de Propiedad</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || ''}>
-                              <FormControl><SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl>
-                              <SelectContent>
-                                <SelectItem value="casa">Casa</SelectItem>
-                                <SelectItem value="apartamento">Apartamento</SelectItem>
-                                <SelectItem value="solar">Solar</SelectItem>
-                                <SelectItem value="finca">Finca</SelectItem>
-                                <SelectItem value="local_comercial">Local Comercial</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </FormItem>
+                          <FormItem><FormLabel className="text-xs">Tipo de Propiedad</FormLabel><FormControl><Input className="h-8 text-sm" placeholder="Ej: Casa, Apartamento" {...field} /></FormControl></FormItem>
                         )} />
                         <FormField control={form.control} name="garantia_tamano" render={({ field }) => (
-                          <FormItem><FormLabel className="text-xs">Tamaño Aprox.</FormLabel><FormControl><Input className="h-8 text-sm" placeholder="Ej: 200 m²" {...field} /></FormControl></FormItem>
+                          <FormItem><FormLabel className="text-xs">Tamaño (m²)</FormLabel><FormControl><Input className="h-8 text-sm" {...field} /></FormControl></FormItem>
                         )} />
                         <FormField control={form.control} name="garantia_documento_propiedad" render={({ field }) => (
-                          <FormItem className="col-span-2"><FormLabel className="text-xs">Documento de Propiedad</FormLabel><FormControl><Input className="h-8 text-sm" placeholder="Ej: Certificado de Título No. ..." {...field} /></FormControl></FormItem>
+                          <FormItem className="col-span-2"><FormLabel className="text-xs">Documento de Propiedad</FormLabel><FormControl><Input className="h-8 text-sm" placeholder="Ej: Título, Certificado" {...field} /></FormControl></FormItem>
                         )} />
                       </div>
                     </div>
                   )}
 
-                  {/* ── Campos de Artículo/Equipo ── */}
+                  {/* ── Campos de Artículo ── */}
                   {isArticulo && (
                     <div className="space-y-3 p-3 rounded-lg border bg-muted/20">
                       <p className="text-xs font-semibold text-muted-foreground uppercase">Datos del Artículo</p>
                       <div className="grid grid-cols-2 gap-3">
                         <FormField control={form.control} name="garantia_nombre_articulo" render={({ field }) => (
-                          <FormItem className="col-span-2"><FormLabel className="text-xs">Nombre del Artículo</FormLabel><FormControl><Input className="h-8 text-sm" placeholder="Ej: Refrigerador Samsung" {...field} /></FormControl></FormItem>
+                          <FormItem className="col-span-2"><FormLabel className="text-xs">Nombre del Artículo</FormLabel><FormControl><Input className="h-8 text-sm" placeholder={'Ej: Televisor Samsung 65"'} {...field} /></FormControl></FormItem>
                         )} />
                         <FormField control={form.control} name="garantia_marca" render={({ field }) => (
                           <FormItem><FormLabel className="text-xs">Marca</FormLabel><FormControl><Input className="h-8 text-sm" {...field} /></FormControl></FormItem>
@@ -400,58 +486,53 @@ export function SolicitudFormDialog() {
                   )}
 
                   {/* Valor y porcentaje */}
-                  {tipoGarantia && (
-                    <>
-                      <div className="grid grid-cols-2 gap-3">
-                        <FormField control={form.control} name="garantia_valor_estimado" render={({ field }) => (
-                          <FormItem><FormLabel className="text-xs">Valor Estimado (RD$)</FormLabel><FormControl><Input className="h-8 text-sm" type="number" min={0} {...field} /></FormControl></FormItem>
-                        )} />
-                        <FormField control={form.control} name="porcentaje_prestamo_garantia" render={({ field }) => (
-                          <FormItem><FormLabel className="text-xs">% Máx. a Prestar</FormLabel><FormControl><Input className="h-8 text-sm" type="number" min={1} max={100} {...field} /></FormControl></FormItem>
-                        )} />
-                      </div>
-                      {valorEstimado > 0 && (
-                        <div className="flex items-center gap-2 p-2 rounded-md bg-primary/5 border border-primary/20">
-                          <ShieldCheck className="h-4 w-4 text-primary" />
-                          <span className="text-xs text-primary font-medium">
-                            Monto máximo por garantía: {formatCurrency(montoMaxGarantia)}
-                          </span>
-                        </div>
-                      )}
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField control={form.control} name="garantia_valor_estimado" render={({ field }) => (
+                      <FormItem><FormLabel className="text-xs">Valor Estimado (RD$)</FormLabel><FormControl><Input className="h-8 text-sm" type="number" min={0} {...field} /></FormControl></FormItem>
+                    )} />
+                    <FormField control={form.control} name="porcentaje_prestamo_garantia" render={({ field }) => (
+                      <FormItem><FormLabel className="text-xs">% Máx. Préstamo</FormLabel><FormControl><Input className="h-8 text-sm" type="number" min={1} max={100} {...field} /></FormControl></FormItem>
+                    )} />
+                  </div>
 
-                      {/* Fotos */}
-                      <div className="space-y-2">
-                        <p className="text-xs font-medium">Fotos del bien</p>
-                        <div className="flex flex-wrap gap-2">
-                          {fotos.map((f, i) => (
-                            <Badge key={i} variant="secondary" className="gap-1 text-xs">
-                              {f.name.slice(0, 20)}
-                              <button type="button" onClick={() => setFotos(prev => prev.filter((_, idx) => idx !== i))}>
-                                <X className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                        <label className="flex items-center gap-2 cursor-pointer text-xs text-primary hover:underline">
-                          <Upload className="h-3.5 w-3.5" />
-                          Subir fotos (máx. 10)
-                          <input type="file" accept="image/*" multiple className="hidden" onChange={handleFileAdd} />
-                        </label>
-                      </div>
-
-                      <FormField control={form.control} name="garantia_notas" render={({ field }) => (
-                        <FormItem><FormLabel className="text-xs">Notas sobre la garantía</FormLabel><FormControl><Textarea className="text-sm" placeholder="Observaciones adicionales..." {...field} /></FormControl></FormItem>
-                      )} />
-                    </>
+                  {valorEstimado > 0 && (
+                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
+                      Monto máximo a prestar: {formatCurrency(montoMaxGarantia)}
+                    </Badge>
                   )}
+
+                  <FormField control={form.control} name="garantia_notas" render={({ field }) => (
+                    <FormItem><FormLabel className="text-xs">Notas sobre la Garantía</FormLabel><FormControl><Textarea className="text-sm" rows={2} {...field} /></FormControl></FormItem>
+                  )} />
+
+                  {/* Fotos */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium">Fotos del Bien (máx 10)</p>
+                    <div className="flex flex-wrap gap-2">
+                      {fotos.map((f, i) => (
+                        <div key={i} className="relative group">
+                          <img src={URL.createObjectURL(f)} alt={f.name} className="h-16 w-16 rounded-md object-cover border" />
+                          <button type="button" className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setFotos(prev => prev.filter((_, j) => j !== i))}>
+                            <X className="h-2.5 w-2.5" />
+                          </button>
+                        </div>
+                      ))}
+                      {fotos.length < 10 && (
+                        <label className="h-16 w-16 rounded-md border-2 border-dashed flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
+                          <Upload className="h-5 w-5 text-muted-foreground" />
+                          <input type="file" accept="image/*" className="hidden" onChange={handleFileAdd} />
+                        </label>
+                      )}
+                    </div>
+                  </div>
                 </CardContent>
               )}
             </Card>
 
             <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={() => { setOpen(false); setFotos([]); }}>Cancelar</Button>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
               <Button type="submit" disabled={createSolicitud.isPending || uploading}>
-                {createSolicitud.isPending || uploading ? 'Creando...' : 'Crear Solicitud'}
+                {createSolicitud.isPending || uploading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Guardando...</> : 'Crear Solicitud'}
               </Button>
             </div>
           </form>

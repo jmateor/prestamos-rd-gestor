@@ -158,24 +158,33 @@ export default function CobroPOS() {
   const montoRecibidoNum = parseFloat(montoRecibido) || 0;
   const devuelta = metodoPago === 'efectivo' ? Math.max(0, montoRecibidoNum - montoPagarNum) : 0;
 
+  // Payment distribution: mora → interés → capital (per installment)
   const distribucion = useMemo(() => {
     let restante = montoPagarNum;
     const result: { cuota: CuotaPOS; capital: number; interes: number; mora: number; total: number }[] = [];
 
     for (const c of cuotasPendientes) {
       if (restante <= 0) break;
-      const pendiente = c.monto_cuota - c.monto_pagado;
+      const pendiente = c.monto_cuota - c.monto_pagado + (c.mora ?? 0);
       const pago = Math.min(restante, pendiente);
-      const ratio = pago / c.monto_cuota;
-      const moraAplicada = Math.min(pago, (c.mora ?? 0) * ratio);
-      const interesAplicado = c.interes * ratio;
-      const capitalAplicado = pago - interesAplicado - moraAplicada;
+      let remainder = pago;
+
+      // 1. Mora first (per cuota, not global)
+      const moraAplicada = Math.min(remainder, c.mora ?? 0);
+      remainder -= moraAplicada;
+
+      // 2. Interés
+      const interesAplicado = Math.min(remainder, c.interes);
+      remainder -= interesAplicado;
+
+      // 3. Capital
+      const capitalAplicado = Math.max(0, remainder);
 
       result.push({
         cuota: c,
-        capital: Math.max(0, capitalAplicado),
-        interes: Math.max(0, interesAplicado),
-        mora: Math.max(0, moraAplicada),
+        capital: capitalAplicado,
+        interes: interesAplicado,
+        mora: moraAplicada,
         total: pago,
       });
       restante -= pago;
@@ -193,8 +202,8 @@ export default function CobroPOS() {
       if (!montoRecibido || montoRecibidoNum <= 0) return 'Debe ingresar el monto recibido del cliente.';
       if (montoRecibidoNum < montoPagarNum) return 'El monto recibido no puede ser menor al monto a pagar.';
     }
-    if (metodoPago === 'transferencia') {
-      if (!referencia.trim()) return 'Debe ingresar el número de transferencia.';
+    if (metodoPago === 'transferencia' || metodoPago === 'cheque') {
+      if (!referencia.trim()) return metodoPago === 'transferencia' ? 'Debe ingresar el número de transferencia.' : 'Debe ingresar el número de cheque.';
     }
     return null;
   };
@@ -315,6 +324,7 @@ export default function CobroPOS() {
   const metodoLabel: Record<string, string> = {
     efectivo: '💵 Efectivo',
     transferencia: '🏦 Transferencia',
+    cheque: '📝 Cheque',
   };
 
   return (
@@ -531,6 +541,7 @@ export default function CobroPOS() {
                       <SelectContent>
                         <SelectItem value="efectivo">💵 Efectivo</SelectItem>
                         <SelectItem value="transferencia">🏦 Transferencia</SelectItem>
+                        <SelectItem value="cheque">📝 Cheque</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -585,6 +596,24 @@ export default function CobroPOS() {
                         <label className="text-sm font-medium mb-1 block">Número de Transferencia *</label>
                         <Input
                           placeholder="Ej: TRX45892177"
+                          value={referencia}
+                          onChange={e => setReferencia(e.target.value)}
+                          className={!referencia.trim() ? 'border-destructive/50' : ''}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CHEQUE */}
+                  {metodoPago === 'cheque' && (
+                    <div className="space-y-3 rounded-lg border border-dashed border-primary/30 p-3 bg-muted/30">
+                      <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                        📝 Pago con Cheque
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">Número de Cheque *</label>
+                        <Input
+                          placeholder="Ej: 000123456"
                           value={referencia}
                           onChange={e => setReferencia(e.target.value)}
                           className={!referencia.trim() ? 'border-destructive/50' : ''}

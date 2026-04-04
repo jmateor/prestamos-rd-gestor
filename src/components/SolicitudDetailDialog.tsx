@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CheckCircle, XCircle, Clock, UserPlus, Loader2, ShieldCheck, Car, Home, Package, Image } from 'lucide-react';
-import { useSolicitud, useGarantes, useGarantiaFotos, useUpdateSolicitudEstado, useAddGarante, type Solicitud } from '@/hooks/useSolicitudes';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CheckCircle, XCircle, Clock, UserPlus, Loader2, ShieldCheck, Car, Home, Package, Image, Pencil } from 'lucide-react';
+import { useSolicitud, useGarantes, useGarantiaFotos, useUpdateSolicitudEstado, useUpdateSolicitud, useAddGarante, type Solicitud } from '@/hooks/useSolicitudes';
 import { formatCurrency } from '@/lib/format';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,6 +17,8 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { ClienteRiskAlert } from '@/components/ClienteRiskAlert';
 import { CreditScoreIndicator } from '@/components/CreditScoreIndicator';
+import { generarCotizacionPDF } from '@/lib/cotizacionPDF';
+import { toast } from 'sonner';
 
 const estadoBadge: Record<string, { class: string; label: string }> = {
   pendiente: { class: 'bg-warning/10 text-warning border-warning/20', label: 'Pendiente' },
@@ -40,6 +43,10 @@ const tipoGarantiaLabel: Record<string, string> = {
   terreno: 'Terreno', electrodomestico: 'Electrodoméstico', equipo: 'Equipo', otro: 'Otro Bien',
 };
 
+const metodoLabel: Record<string, string> = {
+  cuota_fija: 'Cuota Fija', interes_simple: 'Interés Simple', saldo_insoluto: 'Saldo Insoluto',
+};
+
 const garanteSchema = z.object({
   nombre_completo: z.string().trim().min(3, 'Mínimo 3 caracteres').max(100),
   cedula: z.string().min(11, 'Cédula inválida').max(13),
@@ -60,9 +67,12 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
   const { data: garantes } = useGarantes(solicitudId ?? undefined);
   const { data: garantiaFotos } = useGarantiaFotos(solicitudId ?? undefined);
   const updateEstado = useUpdateSolicitudEstado();
+  const updateSolicitud = useUpdateSolicitud();
   const addGarante = useAddGarante();
   const [comentarios, setComentarios] = useState('');
   const [showGaranteForm, setShowGaranteForm] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editData, setEditData] = useState<any>({});
 
   const garanteForm = useForm({
     resolver: zodResolver(garanteSchema),
@@ -71,7 +81,6 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
 
   const handleEstado = async (estado: string) => {
     if (!solicitudId) return;
-    // Block approval if guarantee is incomplete
     if (estado === 'aprobada' && solicitud?.tiene_garantia) {
       if (!solicitud.tipo_garantia || (solicitud.garantia_valor_estimado ?? 0) <= 0) {
         return;
@@ -97,11 +106,51 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
     setShowGaranteForm(false);
   };
 
+  const startEdit = () => {
+    if (!solicitud) return;
+    setEditData({
+      monto_solicitado: solicitud.monto_solicitado,
+      plazo_meses: solicitud.plazo_meses,
+      frecuencia_pago: solicitud.frecuencia_pago,
+      tasa_interes_sugerida: solicitud.tasa_interes_sugerida,
+      proposito: solicitud.proposito,
+      tipo_amortizacion: (solicitud as any).tipo_amortizacion || 'cuota_fija',
+      gastos_legales: (solicitud as any).gastos_legales || 0,
+      gastos_cierre: (solicitud as any).gastos_cierre || 0,
+    });
+    setEditing(true);
+  };
+
+  const saveEdit = async () => {
+    if (!solicitudId) return;
+    await updateSolicitud.mutateAsync({ id: solicitudId, data: editData });
+    setEditing(false);
+    toast.success('Solicitud actualizada');
+  };
+
+  const handleCotizacion = () => {
+    if (!solicitud) return;
+    const cl = solicitud.clientes as any;
+    const doc = generarCotizacionPDF({
+      cliente_nombre: cl ? `${cl.primer_nombre} ${cl.primer_apellido}` : 'N/A',
+      cliente_cedula: cl?.cedula ?? '',
+      monto: solicitud.monto_solicitado,
+      tasa_mensual: solicitud.tasa_interes_sugerida,
+      plazo_meses: solicitud.plazo_meses,
+      frecuencia: solicitud.frecuencia_pago,
+      metodo: (solicitud as any).tipo_amortizacion || 'cuota_fija',
+      gastos_legales: (solicitud as any).gastos_legales,
+      gastos_cierre: (solicitud as any).gastos_cierre,
+    });
+    doc.save(`cotizacion-${solicitud.numero_solicitud}.pdf`);
+  };
+
   const cliente = solicitud?.clientes as any;
   const sol = solicitud as any;
 
   const isVehiculo = sol?.tipo_garantia === 'vehiculo' || sol?.tipo_garantia === 'motocicleta';
   const isPropiedad = sol?.tipo_garantia === 'vivienda' || sol?.tipo_garantia === 'terreno';
+  const canEdit = solicitud?.estado === 'pendiente' || solicitud?.estado === 'en_evaluacion';
 
   return (
     <Dialog open={!!solicitudId} onOpenChange={() => onClose()}>
@@ -124,9 +173,16 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
                   </Badge>
                 )}
               </div>
-              <Badge variant="outline" className={estadoBadge[solicitud.estado]?.class}>
-                {estadoBadge[solicitud.estado]?.label}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className={estadoBadge[solicitud.estado]?.class}>
+                  {estadoBadge[solicitud.estado]?.label}
+                </Badge>
+                {canEdit && !editing && (
+                  <Button size="sm" variant="outline" className="gap-1" onClick={startEdit}>
+                    <Pencil className="h-3 w-3" /> Editar
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Risk Alert */}
@@ -146,16 +202,73 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
               </Card>
             )}
 
-            {/* Préstamo info */}
+            {/* Préstamo info - editable if canEdit */}
             <Card>
               <CardHeader className="py-3"><CardTitle className="text-sm">Datos del Préstamo</CardTitle></CardHeader>
-              <CardContent className="grid grid-cols-2 gap-2 text-sm pb-3">
-                <div><span className="text-muted-foreground">Monto:</span> {formatCurrency(solicitud.monto_solicitado)}</div>
-                <div><span className="text-muted-foreground">Cuotas:</span> {solicitud.plazo_meses}</div>
-                <div><span className="text-muted-foreground">Plazo:</span> {frecuenciaLabel[solicitud.frecuencia_pago]}</div>
-                <div><span className="text-muted-foreground">Tasa:</span> {solicitud.tasa_interes_sugerida}%</div>
-                <div className="col-span-2"><span className="text-muted-foreground">Propósito:</span> {solicitud.proposito}</div>
-                <div><span className="text-muted-foreground">Tipo:</span> {sol.tiene_garantia ? 'Con Garantía' : 'Personal (sin garantía)'}</div>
+              <CardContent className="pb-3">
+                {editing ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-medium">Monto (RD$)</label>
+                        <Input type="number" value={editData.monto_solicitado} onChange={e => setEditData({ ...editData, monto_solicitado: parseFloat(e.target.value) || 0 })} />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium">Cuotas</label>
+                        <Input type="number" value={editData.plazo_meses} onChange={e => setEditData({ ...editData, plazo_meses: parseInt(e.target.value) || 1 })} />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium">Plazo</label>
+                        <Select value={editData.frecuencia_pago} onValueChange={v => setEditData({ ...editData, frecuencia_pago: v })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="diaria">Diaria</SelectItem>
+                            <SelectItem value="semanal">Semanal</SelectItem>
+                            <SelectItem value="quincenal">Quincenal</SelectItem>
+                            <SelectItem value="mensual">Mensual</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium">Tasa (%)</label>
+                        <Input type="number" step={0.5} value={editData.tasa_interes_sugerida} onChange={e => setEditData({ ...editData, tasa_interes_sugerida: parseFloat(e.target.value) || 0 })} />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium">Gastos Legales (RD$)</label>
+                        <Input type="number" value={editData.gastos_legales} onChange={e => setEditData({ ...editData, gastos_legales: parseFloat(e.target.value) || 0 })} />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium">Gastos Cierre (RD$)</label>
+                        <Input type="number" value={editData.gastos_cierre} onChange={e => setEditData({ ...editData, gastos_cierre: parseFloat(e.target.value) || 0 })} />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium">Propósito</label>
+                      <Textarea value={editData.proposito} onChange={e => setEditData({ ...editData, proposito: e.target.value })} />
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>Cancelar</Button>
+                      <Button size="sm" onClick={saveEdit} disabled={updateSolicitud.isPending}>Guardar</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div><span className="text-muted-foreground">Monto:</span> {formatCurrency(solicitud.monto_solicitado)}</div>
+                    <div><span className="text-muted-foreground">Cuotas:</span> {solicitud.plazo_meses}</div>
+                    <div><span className="text-muted-foreground">Plazo:</span> {frecuenciaLabel[solicitud.frecuencia_pago]}</div>
+                    <div><span className="text-muted-foreground">Tasa:</span> {solicitud.tasa_interes_sugerida}%</div>
+                    <div><span className="text-muted-foreground">Método:</span> {metodoLabel[sol.tipo_amortizacion] || 'Cuota Fija'}</div>
+                    <div><span className="text-muted-foreground">Tipo:</span> {sol.tiene_garantia ? 'Con Garantía' : 'Personal'}</div>
+                    {(sol.gastos_legales > 0 || sol.gastos_cierre > 0) && (
+                      <>
+                        <div><span className="text-muted-foreground">G. Legales:</span> {formatCurrency(sol.gastos_legales || 0)}</div>
+                        <div><span className="text-muted-foreground">G. Cierre:</span> {formatCurrency(sol.gastos_cierre || 0)}</div>
+                        <div className="col-span-2"><span className="text-muted-foreground">Monto Neto:</span> <span className="font-semibold">{formatCurrency(solicitud.monto_solicitado - (sol.gastos_legales || 0) - (sol.gastos_cierre || 0))}</span></div>
+                      </>
+                    )}
+                    <div className="col-span-2"><span className="text-muted-foreground">Propósito:</span> {solicitud.proposito}</div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -217,7 +330,6 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
                     <p className="text-xs text-muted-foreground border-t pt-2">{sol.garantia_notas}</p>
                   )}
 
-                  {/* Fotos */}
                   {garantiaFotos && garantiaFotos.length > 0 && (
                     <div className="space-y-2">
                       <p className="text-xs font-medium flex items-center gap-1"><Image className="h-3 w-3" /> Fotos del Bien</p>
@@ -238,7 +350,7 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
             <Card>
               <CardHeader className="py-3 flex flex-row items-center justify-between">
                 <CardTitle className="text-sm">Garantes / Codeudores</CardTitle>
-                {(solicitud.estado === 'pendiente' || solicitud.estado === 'en_evaluacion') && (
+                {canEdit && (
                   <Button size="sm" variant="outline" className="gap-1" onClick={() => setShowGaranteForm(!showGaranteForm)}>
                     <UserPlus className="h-3 w-3" /> Agregar
                   </Button>
@@ -311,8 +423,15 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
               </Card>
             )}
 
+            {/* Cotización PDF */}
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="text-xs" onClick={handleCotizacion}>
+                📄 Cotización PDF
+              </Button>
+            </div>
+
             {/* Actions */}
-            {(solicitud.estado === 'pendiente' || solicitud.estado === 'en_evaluacion') && (
+            {canEdit && (
               <>
                 <Separator />
                 <div className="space-y-3">
