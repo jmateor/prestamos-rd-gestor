@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { User, Phone, MapPin, Briefcase } from 'lucide-react';
 import { useUpdateCliente, type Cliente } from '@/hooks/useClientes';
+import { EmpresaAutocomplete } from '@/components/EmpresaAutocomplete';
 
 const schema = z.object({
   primer_nombre: z.string().min(2),
