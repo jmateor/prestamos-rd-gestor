@@ -604,6 +604,24 @@ export default function CobroPOS() {
                     </div>
                   )}
 
+                  {/* CHEQUE */}
+                  {metodoPago === 'cheque' && (
+                    <div className="space-y-3 rounded-lg border border-dashed border-primary/30 p-3 bg-muted/30">
+                      <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                        📝 Pago con Cheque
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">Número de Cheque *</label>
+                        <Input
+                          placeholder="Ej: 000123456"
+                          value={referencia}
+                          onChange={e => setReferencia(e.target.value)}
+                          className={!referencia.trim() ? 'border-destructive/50' : ''}
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   <Separator />
 
                   {/* Distribution preview */}
