@@ -202,8 +202,8 @@ export default function CobroPOS() {
       if (!montoRecibido || montoRecibidoNum <= 0) return 'Debe ingresar el monto recibido del cliente.';
       if (montoRecibidoNum < montoPagarNum) return 'El monto recibido no puede ser menor al monto a pagar.';
     }
-    if (metodoPago === 'transferencia') {
-      if (!referencia.trim()) return 'Debe ingresar el número de transferencia.';
+    if (metodoPago === 'transferencia' || metodoPago === 'cheque') {
+      if (!referencia.trim()) return metodoPago === 'transferencia' ? 'Debe ingresar el número de transferencia.' : 'Debe ingresar el número de cheque.';
     }
     return null;
   };
