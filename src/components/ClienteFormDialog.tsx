@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Plus, User, Phone, MapPin, Briefcase } from 'lucide-react';
 import { useCreateCliente, type ClienteInsert } from '@/hooks/useClientes';
+import { EmpresaAutocomplete } from '@/components/EmpresaAutocomplete';
 
 const schema = z.object({
   primer_nombre: z.string().min(2, 'Mínimo 2 caracteres'),
