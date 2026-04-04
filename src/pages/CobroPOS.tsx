@@ -324,6 +324,7 @@ export default function CobroPOS() {
   const metodoLabel: Record<string, string> = {
     efectivo: '💵 Efectivo',
     transferencia: '🏦 Transferencia',
+    cheque: '📝 Cheque',
   };
 
   return (
