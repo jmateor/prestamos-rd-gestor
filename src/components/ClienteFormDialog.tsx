@@ -193,7 +193,16 @@ export function ClienteFormDialog() {
               <TabsContent value="laboral" className="space-y-3 mt-4">
                 <div className="grid grid-cols-2 gap-3">
                   <FormField control={form.control} name="lugar_trabajo" render={({ field }) => (
-                    <FormItem><FormLabel>Lugar de Trabajo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Lugar de Trabajo</FormLabel><FormControl>
+                      <EmpresaAutocomplete
+                        value={field.value}
+                        onChange={field.onChange}
+                        onSelect={(emp) => {
+                          form.setValue('direccion_trabajo', emp.direccion_trabajo);
+                          form.setValue('telefono_trabajo', emp.telefono_trabajo);
+                        }}
+                      />
+                    </FormControl><FormMessage /></FormItem>
                   )} />
                   <FormField control={form.control} name="cargo" render={({ field }) => (
                     <FormItem><FormLabel>Cargo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
