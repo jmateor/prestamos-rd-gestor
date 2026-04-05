@@ -10,7 +10,7 @@ import {
   Settings,
   Wallet,
   History,
-  Navigation,
+  
   CreditCard,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
