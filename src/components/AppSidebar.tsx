@@ -10,7 +10,7 @@ import {
   Settings,
   Wallet,
   History,
-  Navigation,
+  
   CreditCard,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
@@ -36,7 +36,7 @@ const navItems = [
   { title: 'Préstamos', url: '/prestamos', icon: Landmark },
   { title: 'Cobranza', url: '/cobranza', icon: Receipt },
   { title: 'Cobro POS', url: '/cobro-pos', icon: CreditCard },
-  { title: 'Cobranza Campo', url: '/cobranza-campo', icon: Navigation },
+  
   
   { title: 'Reportes', url: '/reportes', icon: BarChart3 },
   { title: 'Cierre Caja', url: '/cierre-caja', icon: Wallet },
