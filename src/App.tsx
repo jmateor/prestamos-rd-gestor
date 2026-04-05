@@ -16,7 +16,7 @@ import Reportes from "./pages/Reportes";
 import Ajustes from "./pages/Ajustes";
 import CierreCaja from "./pages/CierreCaja";
 import Bitacora from "./pages/Bitacora";
-import CobranzaCampo from "./pages/CobranzaCampo";
+
 import CobroPOS from "./pages/CobroPOS";
 import NotFound from "./pages/NotFound";
 
