@@ -4,10 +4,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, History, Search, Filter } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, History, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDate } from '@/lib/format';
+
+const PAGE_SIZE = 25;
 
 interface AuditEntryWithUser {
   id: string;
@@ -31,6 +34,7 @@ export default function Bitacora() {
   const [filterAccion, setFilterAccion] = useState<string>('todas');
   const [filterTabla, setFilterTabla] = useState<string>('todas');
   const [searchText, setSearchText] = useState('');
+  const [page, setPage] = useState(0);
 
   const { data: logs, isLoading } = useQuery({
     queryKey: ['audit-log-full'],
@@ -89,6 +93,19 @@ export default function Bitacora() {
     });
   }, [logs, filterAccion, filterTabla, searchText]);
 
+  // Reset page when filters change
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safeePage = Math.min(page, totalPages - 1);
+  const paginated = useMemo(() => {
+    const start = safeePage * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, safeePage]);
+
+  // Reset page on filter change
+  const handleFilterAccion = (v: string) => { setFilterAccion(v); setPage(0); };
+  const handleFilterTabla = (v: string) => { setFilterTabla(v); setPage(0); };
+  const handleSearch = (v: string) => { setSearchText(v); setPage(0); };
+
   return (
     <div className="space-y-6">
       <div>
@@ -106,13 +123,13 @@ export default function Bitacora() {
             <Input
               placeholder="Buscar en notas, tabla, usuario..."
               value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               className="pl-9"
             />
           </div>
         </div>
         <div className="w-[180px]">
-          <Select value={filterAccion} onValueChange={setFilterAccion}>
+          <Select value={filterAccion} onValueChange={handleFilterAccion}>
             <SelectTrigger>
               <Filter className="h-4 w-4 mr-1" />
               <SelectValue placeholder="Acción" />
@@ -126,7 +143,7 @@ export default function Bitacora() {
           </Select>
         </div>
         <div className="w-[180px]">
-          <Select value={filterTabla} onValueChange={setFilterTabla}>
+          <Select value={filterTabla} onValueChange={handleFilterTabla}>
             <SelectTrigger>
               <Filter className="h-4 w-4 mr-1" />
               <SelectValue placeholder="Tabla" />
@@ -154,34 +171,64 @@ export default function Bitacora() {
               <p>Sin registros de auditoría</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Usuario</TableHead>
-                  <TableHead>Acción</TableHead>
-                  <TableHead>Tabla</TableHead>
-                  <TableHead>Registro</TableHead>
-                  <TableHead>Notas</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((l) => (
-                  <TableRow key={l.id}>
-                    <TableCell className="text-sm whitespace-nowrap">{formatDate(l.created_at)}</TableCell>
-                    <TableCell className="text-sm font-medium">{l.user_name}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={`text-xs ${accionColor[l.accion] ?? 'bg-muted text-muted-foreground'}`}>
-                        {l.accion.replace('_', ' ')}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm font-mono">{l.tabla}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground font-mono truncate max-w-[120px]">{l.registro_id ?? '—'}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">{l.notas || '—'}</TableCell>
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Usuario</TableHead>
+                    <TableHead>Acción</TableHead>
+                    <TableHead>Tabla</TableHead>
+                    <TableHead>Registro</TableHead>
+                    <TableHead>Notas</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {paginated.map((l) => (
+                    <TableRow key={l.id}>
+                      <TableCell className="text-sm whitespace-nowrap">{formatDate(l.created_at)}</TableCell>
+                      <TableCell className="text-sm font-medium">{l.user_name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={`text-xs ${accionColor[l.accion] ?? 'bg-muted text-muted-foreground'}`}>
+                          {l.accion.replace('_', ' ')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm font-mono">{l.tabla}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground font-mono truncate max-w-[120px]">{l.registro_id ?? '—'}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">{l.notas || '—'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {/* Paginación */}
+              <div className="flex items-center justify-between px-4 py-3 border-t">
+                <p className="text-sm text-muted-foreground">
+                  Mostrando {safeePage * PAGE_SIZE + 1}–{Math.min((safeePage + 1) * PAGE_SIZE, filtered.length)} de {filtered.length}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={safeePage === 0}
+                    onClick={() => setPage((p) => p - 1)}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    {safeePage + 1} / {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={safeePage >= totalPages - 1}
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    Siguiente <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
