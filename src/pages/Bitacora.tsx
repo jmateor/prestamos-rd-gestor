@@ -34,6 +34,7 @@ export default function Bitacora() {
   const [filterAccion, setFilterAccion] = useState<string>('todas');
   const [filterTabla, setFilterTabla] = useState<string>('todas');
   const [searchText, setSearchText] = useState('');
+  const [page, setPage] = useState(0);
 
   const { data: logs, isLoading } = useQuery({
     queryKey: ['audit-log-full'],
