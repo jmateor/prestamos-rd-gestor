@@ -1,12 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DollarSign, Users, TrendingUp, AlertTriangle, Landmark, Shield, ShieldAlert, ShieldCheck, Trophy, Loader2, CalendarClock } from 'lucide-react';
+import { DollarSign, Users, TrendingUp, AlertTriangle, Landmark, Shield, ShieldAlert, ShieldCheck, Trophy, Loader2, CalendarClock, RotateCcw } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { useDashboardRiskMetrics, useTopClientes, useClientesAltoRiesgo } from '@/hooks/useCreditScore';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardKPIs } from '@/components/DashboardKPIs';
+import { FlipCard } from '@/components/FlipCard';
 
 export default function Dashboard() {
   const { data: risk, isLoading: loadingRisk } = useDashboardRiskMetrics();
@@ -53,22 +54,77 @@ export default function Dashboard() {
       const carteraActiva = pres.filter(p => p.estado === 'activo').reduce((s, p) => s + (p.monto_aprobado ?? 0), 0);
       const prestadoMes = pres.filter(p => p.fecha_desembolso >= firstDay).reduce((s, p) => s + (p.monto_aprobado ?? 0), 0);
       const carteraMora = (cuotasVencidas ?? []).reduce((s, c) => s + (c.monto_cuota ?? 0), 0);
+      const prestamosActivos = pres.filter(p => p.estado === 'activo').length;
+      const prestamosEnMora = pres.filter(p => p.estado === 'en_mora').length;
 
       return {
         clientesActivos: clientesActivos ?? 0,
         carteraActiva,
         prestadoMes,
         carteraMora,
+        prestamosActivos,
+        prestamosEnMora,
       };
     },
   });
 
-  const metrics = [
-    { label: 'Total Prestado (Mes)', value: realMetrics?.prestadoMes ?? 0, icon: DollarSign, color: 'text-primary' },
-    { label: 'Cartera Activa', value: realMetrics?.carteraActiva ?? 0, icon: Landmark, color: 'text-secondary' },
-    { label: 'Cartera en Mora', value: realMetrics?.carteraMora ?? 0, icon: AlertTriangle, color: 'text-destructive' },
-    { label: 'Clientes Activos', value: realMetrics?.clientesActivos ?? 0, icon: Users, color: 'text-primary', isCurrency: false },
-    { label: 'Score Promedio', value: risk?.promedioScore ?? 0, icon: Shield, color: 'text-secondary', isCurrency: false },
+  const flipCards = [
+    {
+      label: 'Total Prestado (Mes)',
+      value: formatCurrency(realMetrics?.prestadoMes ?? 0),
+      icon: DollarSign,
+      colorClass: 'bg-primary',
+      backTitle: 'Detalle del Mes',
+      backItems: [
+        { label: 'Préstamos activos', value: realMetrics?.prestamosActivos ?? 0 },
+        { label: 'En mora', value: realMetrics?.prestamosEnMora ?? 0 },
+      ],
+    },
+    {
+      label: 'Cartera Activa',
+      value: formatCurrency(realMetrics?.carteraActiva ?? 0),
+      icon: Landmark,
+      colorClass: 'bg-secondary',
+      backTitle: 'Composición',
+      backItems: [
+        { label: 'Préstamos activos', value: realMetrics?.prestamosActivos ?? 0 },
+        { label: 'Clientes activos', value: realMetrics?.clientesActivos ?? 0 },
+      ],
+    },
+    {
+      label: 'Cartera en Mora',
+      value: formatCurrency(realMetrics?.carteraMora ?? 0),
+      icon: AlertTriangle,
+      colorClass: 'bg-destructive',
+      backTitle: 'Alertas',
+      backItems: [
+        { label: 'Cuotas vencidas', value: risk?.cuotasVencidas ?? 0 },
+        { label: 'Clientes en mora', value: risk?.clientesMora ?? 0 },
+      ],
+    },
+    {
+      label: 'Clientes Activos',
+      value: (realMetrics?.clientesActivos ?? 0).toLocaleString('es-DO'),
+      icon: Users,
+      colorClass: 'bg-primary',
+      backTitle: 'Riesgo',
+      backItems: [
+        { label: 'Alto riesgo', value: risk?.altoRiesgo ?? 0 },
+        { label: 'Con score', value: risk?.totalConScore ?? 0 },
+      ],
+    },
+    {
+      label: 'Score Promedio',
+      value: (risk?.promedioScore ?? 0).toString(),
+      icon: Shield,
+      colorClass: 'bg-secondary',
+      backTitle: 'Distribución',
+      backItems: [
+        { label: 'Bajo riesgo', value: risk?.bajoRiesgo ?? 0 },
+        { label: 'Medio riesgo', value: risk?.medioRiesgo ?? 0 },
+        { label: 'Alto riesgo', value: risk?.altoRiesgo ?? 0 },
+      ],
+    },
   ];
 
   const riskColor = (nivel: string | null) => {
@@ -81,26 +137,49 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground">Resumen financiero y análisis de riesgo</p>
+        <p className="text-muted-foreground">Resumen financiero y análisis de riesgo · <span className="text-xs italic">Toca una tarjeta para ver más</span></p>
       </div>
 
-      {/* Main Metrics */}
+      {/* Flip Metric Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {metrics.map((m) => (
-          <Card key={m.label} className="shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{m.label}</CardTitle>
-              <m.icon className={`h-5 w-5 ${m.color}`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {m.isCurrency === false ? m.value.toLocaleString('es-DO') : formatCurrency(m.value)}
-              </div>
-            </CardContent>
-          </Card>
+        {flipCards.map((card) => (
+          <FlipCard
+            key={card.label}
+            front={
+              <Card className="h-full shadow-sm hover:shadow-lg transition-shadow border-t-4" style={{ borderTopColor: `hsl(var(--${card.colorClass.replace('bg-', '')}))` }}>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">{card.label}</CardTitle>
+                  <card.icon className={`h-5 w-5 ${card.colorClass.replace('bg-', 'text-')}`} />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-foreground">{card.value}</div>
+                  <p className="text-[10px] text-muted-foreground mt-2 flex items-center gap-1">
+                    <RotateCcw className="h-3 w-3" /> Toca para detalles
+                  </p>
+                </CardContent>
+              </Card>
+            }
+            back={
+              <Card className={`h-full shadow-lg text-primary-foreground ${card.colorClass}`}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold text-primary-foreground">{card.backTitle}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {card.backItems.map((item) => (
+                    <div key={item.label} className="flex justify-between items-center text-sm">
+                      <span className="opacity-90">{item.label}</span>
+                      <span className="font-bold text-lg">{item.value}</span>
+                    </div>
+                  ))}
+                  <p className="text-[10px] opacity-70 mt-2 flex items-center gap-1 pt-1">
+                    <RotateCcw className="h-3 w-3" /> Toca para volver
+                  </p>
+                </CardContent>
+              </Card>
+            }
+          />
         ))}
       </div>
-
       {/* Risk Overview */}
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="shadow-sm">
