@@ -4,10 +4,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, History, Search, Filter } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, History, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDate } from '@/lib/format';
+
+const PAGE_SIZE = 25;
 
 interface AuditEntryWithUser {
   id: string;
