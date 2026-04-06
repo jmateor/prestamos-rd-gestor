@@ -28,7 +28,7 @@ const rolLabel: Record<string, string> = {
 
 // ── Tab: Usuarios ────────────────────────────────────────────────────────────
 
-function UsuariosTab() {
+function UsuariosTab({ isAdmin }: { isAdmin: boolean }) {
   const { data: usuarios, isLoading } = useUsuarios();
   const asignar = useAsignarRol();
   const remover = useRemoverRol();
