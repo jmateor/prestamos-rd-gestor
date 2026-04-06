@@ -16,6 +16,7 @@ import {
   useBancos, useCrearBanco,
 } from '@/hooks/useAjustes';
 import { useParametrosSistema, useActualizarParametro } from '@/hooks/useParametrosSistema';
+import { useUserRole } from '@/hooks/useUserRole';
 
 const ROLES = ['admin', 'oficial_credito', 'cajero', 'supervisor'] as const;
 const rolLabel: Record<string, string> = {
