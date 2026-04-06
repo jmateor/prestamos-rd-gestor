@@ -46,7 +46,7 @@ function UsuariosTab({ isAdmin }: { isAdmin: boolean }) {
               <TableHead>Nombre</TableHead>
               <TableHead>Cargo</TableHead>
               <TableHead>Roles Actuales</TableHead>
-              <TableHead>Asignar Rol</TableHead>
+              {isAdmin && <TableHead>Asignar Rol</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
