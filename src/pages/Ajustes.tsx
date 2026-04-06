@@ -16,6 +16,7 @@ import {
   useBancos, useCrearBanco,
 } from '@/hooks/useAjustes';
 import { useParametrosSistema, useActualizarParametro } from '@/hooks/useParametrosSistema';
+import { useUserRole } from '@/hooks/useUserRole';
 
 const ROLES = ['admin', 'oficial_credito', 'cajero', 'supervisor'] as const;
 const rolLabel: Record<string, string> = {
@@ -27,7 +28,7 @@ const rolLabel: Record<string, string> = {
 
 // ── Tab: Usuarios ────────────────────────────────────────────────────────────
 
-function UsuariosTab() {
+function UsuariosTab({ isAdmin }: { isAdmin: boolean }) {
   const { data: usuarios, isLoading } = useUsuarios();
   const asignar = useAsignarRol();
   const remover = useRemoverRol();
@@ -45,7 +46,7 @@ function UsuariosTab() {
               <TableHead>Nombre</TableHead>
               <TableHead>Cargo</TableHead>
               <TableHead>Roles Actuales</TableHead>
-              <TableHead>Asignar Rol</TableHead>
+              {isAdmin && <TableHead>Asignar Rol</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -58,17 +59,20 @@ function UsuariosTab() {
                     {u.roles.map((r) => (
                       <Badge key={r} variant="outline" className="text-xs gap-1">
                         {rolLabel[r] ?? r}
-                        <button
-                          className="ml-1 hover:text-destructive"
-                          onClick={() => remover.mutate({ user_id: u.user_id, role: r })}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
+                        {isAdmin && (
+                          <button
+                            className="ml-1 hover:text-destructive"
+                            onClick={() => remover.mutate({ user_id: u.user_id, role: r })}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        )}
                       </Badge>
                     ))}
                     {u.roles.length === 0 && <span className="text-xs text-muted-foreground">Sin roles</span>}
                   </div>
                 </TableCell>
+                {isAdmin && (
                 <TableCell>
                   <div className="flex gap-2">
                     <Select
@@ -97,6 +101,7 @@ function UsuariosTab() {
                     </Button>
                   </div>
                 </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>
@@ -350,7 +355,7 @@ const categoriaLabel: Record<string, string> = {
   operaciones: '⚙️ Operaciones',
 };
 
-function ParametrosTab() {
+function ParametrosTab({ isAdmin }: { isAdmin: boolean }) {
   const { data: parametros, isLoading } = useParametrosSistema();
   const actualizar = useActualizarParametro();
   const [editValues, setEditValues] = useState<Record<string, string>>({});
@@ -386,9 +391,10 @@ function ParametrosTab() {
                     className="max-w-[200px] h-8 text-sm"
                     type={p.tipo === 'numero' ? 'number' : 'text'}
                     value={currentVal}
-                    onChange={(e) => setEditValues(prev => ({ ...prev, [p.id]: e.target.value }))}
-                  />
-                  {edited && (
+                    disabled={!isAdmin}
+                     onChange={(e) => setEditValues(prev => ({ ...prev, [p.id]: e.target.value }))}
+                   />
+                   {edited && isAdmin && (
                     <Button
                       size="sm"
                       className="h-8 gap-1"
@@ -418,6 +424,8 @@ function ParametrosTab() {
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 export default function Ajustes() {
+  const { isAdmin } = useUserRole();
+
   return (
     <div className="space-y-6">
       <div>
@@ -444,10 +452,10 @@ export default function Ajustes() {
         </TabsList>
 
         <TabsContent value="usuarios" className="mt-4">
-          <UsuariosTab />
+          <UsuariosTab isAdmin={isAdmin} />
         </TabsContent>
         <TabsContent value="parametros" className="mt-4">
-          <ParametrosTab />
+          <ParametrosTab isAdmin={isAdmin} />
         </TabsContent>
         <TabsContent value="financiamientos" className="mt-4">
           <FinanciamientosTab />
