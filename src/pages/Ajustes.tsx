@@ -391,6 +391,9 @@ function ParametrosTab({ isAdmin }: { isAdmin: boolean }) {
                     className="max-w-[200px] h-8 text-sm"
                     type={p.tipo === 'numero' ? 'number' : 'text'}
                     value={currentVal}
+                    disabled={!isAdmin}
+                    onChange={(e) => setEditValues(prev => ({ ...prev, [p.id]: e.target.value }))}
+                  />
                     onChange={(e) => setEditValues(prev => ({ ...prev, [p.id]: e.target.value }))}
                   />
                   {edited && (
