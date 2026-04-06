@@ -427,6 +427,8 @@ function ParametrosTab({ isAdmin }: { isAdmin: boolean }) {
 
 export default function Ajustes() {
   const { isAdmin } = useUserRole();
+
+  return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
@@ -452,10 +454,10 @@ export default function Ajustes() {
         </TabsList>
 
         <TabsContent value="usuarios" className="mt-4">
-          <UsuariosTab />
+          <UsuariosTab isAdmin={isAdmin} />
         </TabsContent>
         <TabsContent value="parametros" className="mt-4">
-          <ParametrosTab />
+          <ParametrosTab isAdmin={isAdmin} />
         </TabsContent>
         <TabsContent value="financiamientos" className="mt-4">
           <FinanciamientosTab />
