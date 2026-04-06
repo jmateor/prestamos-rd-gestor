@@ -59,12 +59,14 @@ function UsuariosTab({ isAdmin }: { isAdmin: boolean }) {
                     {u.roles.map((r) => (
                       <Badge key={r} variant="outline" className="text-xs gap-1">
                         {rolLabel[r] ?? r}
-                        <button
-                          className="ml-1 hover:text-destructive"
-                          onClick={() => remover.mutate({ user_id: u.user_id, role: r })}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
+                        {isAdmin && (
+                          <button
+                            className="ml-1 hover:text-destructive"
+                            onClick={() => remover.mutate({ user_id: u.user_id, role: r })}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        )}
                       </Badge>
                     ))}
                     {u.roles.length === 0 && <span className="text-xs text-muted-foreground">Sin roles</span>}
