@@ -355,7 +355,7 @@ const categoriaLabel: Record<string, string> = {
   operaciones: '⚙️ Operaciones',
 };
 
-function ParametrosTab() {
+function ParametrosTab({ isAdmin }: { isAdmin: boolean }) {
   const { data: parametros, isLoading } = useParametrosSistema();
   const actualizar = useActualizarParametro();
   const [editValues, setEditValues] = useState<Record<string, string>>({});
