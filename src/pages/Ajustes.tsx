@@ -72,6 +72,7 @@ function UsuariosTab({ isAdmin }: { isAdmin: boolean }) {
                     {u.roles.length === 0 && <span className="text-xs text-muted-foreground">Sin roles</span>}
                   </div>
                 </TableCell>
+                {isAdmin && (
                 <TableCell>
                   <div className="flex gap-2">
                     <Select
@@ -100,6 +101,7 @@ function UsuariosTab({ isAdmin }: { isAdmin: boolean }) {
                     </Button>
                   </div>
                 </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>
