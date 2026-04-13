@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ShieldAlert, Banknote, Search } from 'lucide-react';
 import { useCreatePrestamo, usePrestamos } from '@/hooks/usePrestamos';
-import { calcAmortizacion, totalCuotas, fechaBaseDesde } from '@/lib/amortizacion';
+import { calcAmortizacion, totalCuotas, fechaBaseDesde, parseLocalDate } from '@/lib/amortizacion';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -131,7 +131,7 @@ export default function Desembolsos() {
     try {
       if (!watched.monto_aprobado || !watched.plazo_meses) return null;
       const fechaPrimerPago = watched.fecha_inicio_pago || watched.fecha_desembolso || today;
-      const fechaBase = fechaBaseDesde(new Date(fechaPrimerPago), watched.frecuencia_pago);
+      const fechaBase = fechaBaseDesde(parseLocalDate(fechaPrimerPago), watched.frecuencia_pago);
       const cuotas = calcAmortizacion(
         watched.monto_aprobado,
         watched.tasa_interes / 100,

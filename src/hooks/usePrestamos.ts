@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { calcAmortizacion, fechaBaseDesde, type CuotaCalc } from '@/lib/amortizacion';
+import { calcAmortizacion, fechaBaseDesde, parseLocalDate, type CuotaCalc } from '@/lib/amortizacion';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -189,7 +189,7 @@ export function useCreatePrestamo() {
 
       // 2. Generate amortization table using fecha_inicio_pago as first payment date
       const fechaPrimerPago = input.fecha_inicio_pago || input.fecha_desembolso;
-      const fechaBase = fechaBaseDesde(new Date(fechaPrimerPago), input.frecuencia_pago);
+      const fechaBase = fechaBaseDesde(parseLocalDate(fechaPrimerPago), input.frecuencia_pago);
       const cuotas: CuotaCalc[] = calcAmortizacion(
         input.monto_aprobado,
         input.tasa_interes / 100,
