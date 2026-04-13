@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ShieldAlert, Banknote, Search } from 'lucide-react';
 import { useCreatePrestamo, usePrestamos } from '@/hooks/usePrestamos';
-import { calcAmortizacion, totalCuotas } from '@/lib/amortizacion';
+import { calcAmortizacion, totalCuotas, fechaBaseDesde } from '@/lib/amortizacion';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -130,14 +130,15 @@ export default function Desembolsos() {
   const preview = (() => {
     try {
       if (!watched.monto_aprobado || !watched.plazo_meses) return null;
-      const fechaBase = watched.fecha_inicio_pago || watched.fecha_desembolso || today;
+      const fechaPrimerPago = watched.fecha_inicio_pago || watched.fecha_desembolso || today;
+      const fechaBase = fechaBaseDesde(new Date(fechaPrimerPago), watched.frecuencia_pago);
       const cuotas = calcAmortizacion(
         watched.monto_aprobado,
         watched.tasa_interes / 100,
         watched.plazo_meses,
         watched.frecuencia_pago,
         watched.metodo_amortizacion,
-        new Date(fechaBase),
+        fechaBase,
       );
       const n = totalCuotas(watched.plazo_meses, watched.frecuencia_pago);
       return { cuota: cuotas[0]?.monto_cuota ?? 0, total: n, primerPago: cuotas[0]?.fecha_vencimiento };
