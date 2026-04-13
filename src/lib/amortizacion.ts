@@ -177,13 +177,13 @@ export function calcAmortizacion(
  * Como nextFecha(base, 1, freq) = base + 1 período, restamos 1 período.
  */
 export function fechaBaseDesde(fechaPrimerPago: Date, frecuencia: string): Date {
+  // Normalize to local noon to avoid timezone issues with date-only strings
+  const d = new Date(fechaPrimerPago.getFullYear(), fechaPrimerPago.getMonth(), fechaPrimerPago.getDate(), 12);
   if (frecuencia === 'mensual') {
-    const d = new Date(fechaPrimerPago);
     d.setMonth(d.getMonth() - 1);
     return d;
   }
   const dias = DIAS_FRECUENCIA[frecuencia] ?? 30;
-  const d = new Date(fechaPrimerPago);
   d.setDate(d.getDate() - dias);
   return d;
 }
