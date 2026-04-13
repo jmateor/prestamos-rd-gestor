@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Clientes from "./pages/Clientes";
 import Solicitudes from "./pages/Solicitudes";
 import Prestamos from "./pages/Prestamos";
+import Desembolsos from "./pages/Desembolsos";
 import Cobranza from "./pages/Cobranza";
 // Garantias module removed - integrated into Solicitudes
 import Reportes from "./pages/Reportes";
@@ -36,6 +37,7 @@ const AppRoutes = () => (
     <Route path="/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
     <Route path="/solicitudes" element={<ProtectedRoute><Solicitudes /></ProtectedRoute>} />
     <Route path="/prestamos" element={<ProtectedRoute><Prestamos /></ProtectedRoute>} />
+    <Route path="/desembolsos" element={<ProtectedRoute><Desembolsos /></ProtectedRoute>} />
     <Route path="/cobranza" element={<ProtectedRoute><Cobranza /></ProtectedRoute>} />
     {/* Garantías route removed - integrated into Solicitudes */}
     <Route path="/reportes" element={<ProtectedRoute><Reportes /></ProtectedRoute>} />

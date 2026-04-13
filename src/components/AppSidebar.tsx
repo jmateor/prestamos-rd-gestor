@@ -34,6 +34,7 @@ const navItems = [
   { title: 'Clientes', url: '/clientes', icon: Users },
   { title: 'Solicitudes', url: '/solicitudes', icon: FileText },
   { title: 'Préstamos', url: '/prestamos', icon: Landmark },
+  { title: 'Desembolsos', url: '/desembolsos', icon: Banknote },
   { title: 'Cobranza', url: '/cobranza', icon: Receipt },
   { title: 'Cobro POS', url: '/cobro-pos', icon: CreditCard },
   
