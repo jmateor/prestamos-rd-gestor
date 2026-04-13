@@ -3,6 +3,7 @@ import {
   Users,
   FileText,
   Landmark,
+  Banknote,
   Receipt,
   BarChart3,
   DollarSign,
