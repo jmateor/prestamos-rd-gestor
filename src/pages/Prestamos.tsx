@@ -6,7 +6,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Landmark, Loader2 } from 'lucide-react';
 import { usePrestamos } from '@/hooks/usePrestamos';
-import { PrestamoFormDialog } from '@/components/PrestamoFormDialog';
 import { PrestamoDetailSheet } from '@/components/PrestamoDetailSheet';
 import { formatCurrency, formatDate } from '@/lib/format';
 
@@ -41,7 +40,6 @@ export default function Prestamos() {
           <h1 className="text-2xl font-bold text-foreground">Préstamos</h1>
           <p className="text-muted-foreground">Administración de préstamos activos</p>
         </div>
-        <PrestamoFormDialog />
       </div>
 
       {/* Filters */}
