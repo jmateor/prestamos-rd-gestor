@@ -172,4 +172,20 @@ export function calcAmortizacion(
   }
 }
 
+/**
+ * Calcula la fecha base para que la primera cuota caiga exactamente en fechaPrimerPago.
+ * Como nextFecha(base, 1, freq) = base + 1 período, restamos 1 período.
+ */
+export function fechaBaseDesde(fechaPrimerPago: Date, frecuencia: string): Date {
+  if (frecuencia === 'mensual') {
+    const d = new Date(fechaPrimerPago);
+    d.setMonth(d.getMonth() - 1);
+    return d;
+  }
+  const dias = DIAS_FRECUENCIA[frecuencia] ?? 30;
+  const d = new Date(fechaPrimerPago);
+  d.setDate(d.getDate() - dias);
+  return d;
+}
+
 function round2(n: number) { return Math.round(n * 100) / 100; }
