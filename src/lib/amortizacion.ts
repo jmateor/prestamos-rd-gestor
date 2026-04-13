@@ -33,24 +33,30 @@ export function totalCuotas(plazo_meses: number, frecuencia: string): number {
 }
 
 function addDias(date: Date, dias: number): Date {
-  const d = new Date(date);
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12);
   d.setDate(d.getDate() + dias);
   return d;
 }
 
 function addMes(date: Date): Date {
-  const d = new Date(date);
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12);
   d.setMonth(d.getMonth() + 1);
   return d;
 }
 
 function nextFecha(base: Date, n: number, frecuencia: string): Date {
   if (frecuencia === 'mensual') {
-    const d = new Date(base);
+    const d = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 12);
     d.setMonth(d.getMonth() + n);
     return d;
   }
   return addDias(base, DIAS_FRECUENCIA[frecuencia] * n);
+}
+
+/** Parse a YYYY-MM-DD string into a local Date (avoids UTC midnight issues) */
+export function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d, 12);
 }
 
 /**
