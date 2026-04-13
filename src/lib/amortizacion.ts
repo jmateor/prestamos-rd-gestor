@@ -33,24 +33,30 @@ export function totalCuotas(plazo_meses: number, frecuencia: string): number {
 }
 
 function addDias(date: Date, dias: number): Date {
-  const d = new Date(date);
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12);
   d.setDate(d.getDate() + dias);
   return d;
 }
 
 function addMes(date: Date): Date {
-  const d = new Date(date);
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12);
   d.setMonth(d.getMonth() + 1);
   return d;
 }
 
 function nextFecha(base: Date, n: number, frecuencia: string): Date {
   if (frecuencia === 'mensual') {
-    const d = new Date(base);
+    const d = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 12);
     d.setMonth(d.getMonth() + n);
     return d;
   }
   return addDias(base, DIAS_FRECUENCIA[frecuencia] * n);
+}
+
+/** Parse a YYYY-MM-DD string into a local Date (avoids UTC midnight issues) */
+export function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d, 12);
 }
 
 /**
@@ -170,6 +176,22 @@ export function calcAmortizacion(
     case 'saldo_insoluto':  return calcSaldoInsoluto(monto, tasa_mensual, plazo_meses, frecuencia, fecha_inicio);
     default:                return calcCuotaFija(monto, tasa_mensual, plazo_meses, frecuencia, fecha_inicio);
   }
+}
+
+/**
+ * Calcula la fecha base para que la primera cuota caiga exactamente en fechaPrimerPago.
+ * Como nextFecha(base, 1, freq) = base + 1 período, restamos 1 período.
+ */
+export function fechaBaseDesde(fechaPrimerPago: Date, frecuencia: string): Date {
+  // Normalize to local noon to avoid timezone issues with date-only strings
+  const d = new Date(fechaPrimerPago.getFullYear(), fechaPrimerPago.getMonth(), fechaPrimerPago.getDate(), 12);
+  if (frecuencia === 'mensual') {
+    d.setMonth(d.getMonth() - 1);
+    return d;
+  }
+  const dias = DIAS_FRECUENCIA[frecuencia] ?? 30;
+  d.setDate(d.getDate() - dias);
+  return d;
 }
 
 function round2(n: number) { return Math.round(n * 100) / 100; }
