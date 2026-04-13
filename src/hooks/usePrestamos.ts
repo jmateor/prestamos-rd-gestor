@@ -85,6 +85,7 @@ export interface PrestamoInsert {
   metodo_amortizacion: string;
   tipo_amortizacion?: string;
   fecha_desembolso: string;
+  fecha_inicio_pago?: string;
   notas?: string;
   gastos_legales?: number;
   gastos_cierre?: number;
