@@ -446,7 +446,7 @@ export default function Desembolsos() {
                       <span className="font-semibold text-foreground">{preview.total}</span>
                       <span>Primer pago:</span>
                       <span className="font-semibold text-foreground">
-                        {preview.primerPago ? formatDate(preview.primerPago.toISOString().split('T')[0]) : '—'}
+                        {preview.primerPago ? formatDate(`${preview.primerPago.getFullYear()}-${String(preview.primerPago.getMonth()+1).padStart(2,'0')}-${String(preview.primerPago.getDate()).padStart(2,'0')}`) : '—'}
                       </span>
                     </div>
                   </div>
