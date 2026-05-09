@@ -193,7 +193,11 @@ export default function Dashboard() {
                 </TableHeader>
                 <TableBody>
                   {topClientes.slice(0, 10).map((c, i) => (
-                    <TableRow key={c.id} className="border-0">
+                    <TableRow
+                      key={c.id}
+                      className="cursor-pointer border-0"
+                      onClick={() => handleClienteClick(c.id)}
+                    >
                       <TableCell className="text-muted-foreground">{i + 1}</TableCell>
                       <TableCell className="font-medium">{c.primer_nombre} {c.primer_apellido}</TableCell>
                       <TableCell className="text-muted-foreground">{c.cedula}</TableCell>
