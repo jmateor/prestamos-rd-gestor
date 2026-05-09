@@ -124,7 +124,12 @@ export default function Dashboard() {
                 {prestamosAVencer.map((c: any) => {
                   const cl = c.prestamos?.clientes;
                   return (
-                    <div key={c.id} className="flex items-center justify-between py-3">
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => c.prestamo_id && setSelectedPrestamoId(c.prestamo_id)}
+                      className="flex w-full items-center justify-between py-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md px-2 -mx-2"
+                    >
                       <div className="min-w-0">
                         <div className="truncate text-sm font-medium text-foreground">
                           {cl ? `${cl.primer_nombre} ${cl.primer_apellido}` : '—'}
@@ -134,7 +139,7 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <div className="text-sm font-semibold tabular-nums">{formatCurrency(c.monto_cuota)}</div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
