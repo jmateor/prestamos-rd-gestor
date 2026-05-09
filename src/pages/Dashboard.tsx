@@ -39,7 +39,7 @@ export default function Dashboard() {
       const futureStr = in7days.toISOString().split('T')[0];
       const { data, error } = await supabase
         .from('cuotas')
-        .select('id, numero_cuota, fecha_vencimiento, monto_cuota, prestamos(numero_prestamo, clientes(primer_nombre, primer_apellido))')
+        .select('id, prestamo_id, numero_cuota, fecha_vencimiento, monto_cuota, prestamos(numero_prestamo, clientes(primer_nombre, primer_apellido))')
         .eq('estado', 'pendiente')
         .gte('fecha_vencimiento', todayStr)
         .lte('fecha_vencimiento', futureStr)
