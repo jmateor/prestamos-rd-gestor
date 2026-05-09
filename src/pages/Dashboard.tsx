@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -6,10 +7,27 @@ import { formatCurrency, formatDate } from '@/lib/format';
 import { useDashboardRiskMetrics, useTopClientes } from '@/hooks/useCreditScore';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { PrestamoDetailSheet } from '@/components/PrestamoDetailSheet';
+import { ClienteProfileSheet } from '@/components/ClienteProfileSheet';
+import type { Cliente } from '@/hooks/useClientes';
+import { toast } from 'sonner';
 
 export default function Dashboard() {
   const { data: risk } = useDashboardRiskMetrics();
   const { data: topClientes } = useTopClientes();
+  const [selectedPrestamoId, setSelectedPrestamoId] = useState<string | null>(null);
+  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
+  const [clienteOpen, setClienteOpen] = useState(false);
+
+  const handleClienteClick = async (id: string) => {
+    const { data, error } = await supabase.from('clientes').select('*').eq('id', id).maybeSingle();
+    if (error || !data) {
+      toast.error('No se pudo cargar el cliente');
+      return;
+    }
+    setSelectedCliente(data as Cliente);
+    setClienteOpen(true);
+  };
 
   const { data: prestamosAVencer } = useQuery({
     queryKey: ['prestamos-a-vencer'],
