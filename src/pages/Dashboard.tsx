@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -6,10 +7,27 @@ import { formatCurrency, formatDate } from '@/lib/format';
 import { useDashboardRiskMetrics, useTopClientes } from '@/hooks/useCreditScore';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { PrestamoDetailSheet } from '@/components/PrestamoDetailSheet';
+import { ClienteProfileSheet } from '@/components/ClienteProfileSheet';
+import type { Cliente } from '@/hooks/useClientes';
+import { toast } from 'sonner';
 
 export default function Dashboard() {
   const { data: risk } = useDashboardRiskMetrics();
   const { data: topClientes } = useTopClientes();
+  const [selectedPrestamoId, setSelectedPrestamoId] = useState<string | null>(null);
+  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
+  const [clienteOpen, setClienteOpen] = useState(false);
+
+  const handleClienteClick = async (id: string) => {
+    const { data, error } = await supabase.from('clientes').select('*').eq('id', id).maybeSingle();
+    if (error || !data) {
+      toast.error('No se pudo cargar el cliente');
+      return;
+    }
+    setSelectedCliente(data as Cliente);
+    setClienteOpen(true);
+  };
 
   const { data: prestamosAVencer } = useQuery({
     queryKey: ['prestamos-a-vencer'],
@@ -21,7 +39,7 @@ export default function Dashboard() {
       const futureStr = in7days.toISOString().split('T')[0];
       const { data, error } = await supabase
         .from('cuotas')
-        .select('id, numero_cuota, fecha_vencimiento, monto_cuota, prestamos(numero_prestamo, clientes(primer_nombre, primer_apellido))')
+        .select('id, prestamo_id, numero_cuota, fecha_vencimiento, monto_cuota, prestamos(numero_prestamo, clientes(primer_nombre, primer_apellido))')
         .eq('estado', 'pendiente')
         .gte('fecha_vencimiento', todayStr)
         .lte('fecha_vencimiento', futureStr)
@@ -106,7 +124,12 @@ export default function Dashboard() {
                 {prestamosAVencer.map((c: any) => {
                   const cl = c.prestamos?.clientes;
                   return (
-                    <div key={c.id} className="flex items-center justify-between py-3">
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => c.prestamo_id && setSelectedPrestamoId(c.prestamo_id)}
+                      className="flex w-full items-center justify-between py-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md px-2 -mx-2"
+                    >
                       <div className="min-w-0">
                         <div className="truncate text-sm font-medium text-foreground">
                           {cl ? `${cl.primer_nombre} ${cl.primer_apellido}` : '—'}
@@ -116,7 +139,7 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <div className="text-sm font-semibold tabular-nums">{formatCurrency(c.monto_cuota)}</div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -170,7 +193,11 @@ export default function Dashboard() {
                 </TableHeader>
                 <TableBody>
                   {topClientes.slice(0, 10).map((c, i) => (
-                    <TableRow key={c.id} className="border-0">
+                    <TableRow
+                      key={c.id}
+                      className="cursor-pointer border-0"
+                      onClick={() => handleClienteClick(c.id)}
+                    >
                       <TableCell className="text-muted-foreground">{i + 1}</TableCell>
                       <TableCell className="font-medium">{c.primer_nombre} {c.primer_apellido}</TableCell>
                       <TableCell className="text-muted-foreground">{c.cedula}</TableCell>
@@ -188,6 +215,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </section>
+
+      <PrestamoDetailSheet prestamoId={selectedPrestamoId} onClose={() => setSelectedPrestamoId(null)} />
+      <ClienteProfileSheet cliente={selectedCliente} open={clienteOpen} onOpenChange={setClienteOpen} />
     </div>
   );
 }
