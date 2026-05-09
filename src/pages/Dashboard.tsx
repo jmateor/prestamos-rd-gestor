@@ -215,6 +215,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </section>
+
+      <PrestamoDetailSheet prestamoId={selectedPrestamoId} onClose={() => setSelectedPrestamoId(null)} />
+      <ClienteProfileSheet cliente={selectedCliente} open={clienteOpen} onOpenChange={setClienteOpen} />
     </div>
   );
 }
