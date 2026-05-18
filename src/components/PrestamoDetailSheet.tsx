@@ -376,15 +376,39 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
               {/* Cuotas tab */}
               <TabsContent value="cuotas">
                 {(() => {
-                  const todayStr = new Date().toISOString().split('T')[0];
+                  // Fecha de hoy en local (YYYY-MM-DD) — estándar del proyecto
+                  const now = new Date();
+                  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
                   const rows = cuotas ?? [];
-                  const totInteres = rows.reduce((s, c) => s + (c.interes ?? 0), 0);
-                  const totInteresPend = rows.filter(c => c.estado !== 'pagada').reduce((s, c) => s + (c.interes ?? 0), 0);
-                  const totMora = rows.reduce((s, c) => s + (c.mora ?? 0), 0);
-                  const totCapitalPend = rows.filter(c => c.estado !== 'pagada').reduce((s, c) => s + (c.capital ?? 0), 0);
+                  const pagosList = pagos ?? [];
+
+                  // Totales programados (de la tabla cuotas)
+                  const totInteres  = rows.reduce((s, c) => s + (c.interes ?? 0), 0);
+                  const totCapital  = rows.reduce((s, c) => s + (c.capital ?? 0), 0);
+                  const totMoraProg = rows.reduce((s, c) => s + (c.mora ?? 0), 0);
+
+                  // Totales pagados (de la tabla pagos) — refleja el saldo REAL en BD
+                  const capPagado     = pagosList.reduce((s, p: any) => s + (p.capital_pagado ?? 0), 0);
+                  const intPagado     = pagosList.reduce((s, p: any) => s + (p.interes_pagado ?? 0), 0);
+                  const moraPagada    = pagosList.reduce((s, p: any) => s + (p.mora_pagada ?? 0), 0);
+
+                  // Insolutos = lo programado menos lo aplicado
+                  const capInsoluto   = Math.max(0, (prestamo?.monto_aprobado ?? totCapital) - capPagado);
+                  const intPendiente  = Math.max(0, totInteres - intPagado);
+                  const moraPendiente = Math.max(0, totMoraProg - moraPagada);
+
+                  // Estado por cuota (en mora = no pagada y fecha_vencimiento < hoy local)
+                  const isEnMora = (c: any) => c.estado !== 'pagada' && c.fecha_vencimiento < todayStr;
                   const cntPagadas = rows.filter(c => c.estado === 'pagada').length;
-                  const cntMora = rows.filter(c => c.estado !== 'pagada' && c.fecha_vencimiento < todayStr).length;
-                  const cntPend = rows.length - cntPagadas - cntMora;
+                  const cntMora    = rows.filter(isEnMora).length;
+                  const cntPend    = rows.length - cntPagadas - cntMora;
+
+                  // Días de atraso máximo (cuota vencida más antigua sin pagar)
+                  const venc = rows.filter(isEnMora).map(c => c.fecha_vencimiento).sort();
+                  const diasAtrasoMax = venc.length
+                    ? Math.floor((Date.now() - new Date(venc[0] + 'T12:00:00').getTime()) / 86_400_000)
+                    : 0;
 
                   return (
                     <>
@@ -400,6 +424,9 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
                         <div className="rounded-md border bg-destructive/5 p-2">
                           <p className="text-muted-foreground">En mora</p>
                           <p className="font-semibold text-destructive">{cntMora}</p>
+                          {diasAtrasoMax > 0 && (
+                            <p className="text-[10px] text-muted-foreground mt-0.5">Máx. {diasAtrasoMax} días</p>
+                          )}
                         </div>
                       </div>
 
@@ -419,13 +446,20 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
                           </TableHeader>
                           <TableBody>
                             {rows.map((c) => {
-                              const display = c.estado !== 'pagada' && c.estado !== 'parcial' && c.fecha_vencimiento < todayStr
-                                ? 'en_mora'
-                                : c.estado;
+                              const enMora = isEnMora(c);
+                              const display = enMora && c.estado !== 'parcial' ? 'en_mora' : c.estado;
+                              const dias = enMora
+                                ? Math.floor((Date.now() - new Date(c.fecha_vencimiento + 'T12:00:00').getTime()) / 86_400_000)
+                                : 0;
                               return (
                                 <TableRow key={c.id} className={c.estado === 'pagada' ? 'opacity-60' : ''}>
                                   <TableCell className="text-muted-foreground text-xs">{c.numero_cuota}</TableCell>
-                                  <TableCell className="text-sm">{formatDate(c.fecha_vencimiento)}</TableCell>
+                                  <TableCell className="text-sm">
+                                    {formatDate(c.fecha_vencimiento)}
+                                    {dias > 0 && (
+                                      <span className="block text-[10px] text-destructive">+{dias}d</span>
+                                    )}
+                                  </TableCell>
                                   <TableCell className="text-sm font-medium">{formatCurrency(c.monto_cuota)}</TableCell>
                                   <TableCell className="text-sm">{formatCurrency(c.capital)}</TableCell>
                                   <TableCell className="text-sm">{formatCurrency(c.interes)}</TableCell>
@@ -445,7 +479,7 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
                                   Totales
                                 </TableCell>
                                 <TableCell className="text-sm">{formatCurrency(totInteres)}</TableCell>
-                                <TableCell className="text-sm text-destructive">{formatCurrency(totMora)}</TableCell>
+                                <TableCell className="text-sm text-destructive">{formatCurrency(totMoraProg)}</TableCell>
                                 <TableCell className="text-sm">—</TableCell>
                                 <TableCell />
                               </TableRow>
@@ -454,19 +488,44 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
                         </Table>
                       </div>
 
-                      <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                      <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                         <div className="rounded-md border p-2">
-                          <p className="text-muted-foreground">Interés total</p>
-                          <p className="font-semibold">{formatCurrency(totInteres)}</p>
+                          <p className="text-muted-foreground">Capital insoluto</p>
+                          <p className="font-semibold text-destructive">{formatCurrency(capInsoluto)}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            {formatCurrency(prestamo?.monto_aprobado ?? 0)} − {formatCurrency(capPagado)}
+                          </p>
                         </div>
                         <div className="rounded-md border p-2">
                           <p className="text-muted-foreground">Interés pendiente</p>
-                          <p className="font-semibold">{formatCurrency(totInteresPend)}</p>
+                          <p className="font-semibold">{formatCurrency(intPendiente)}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            {formatCurrency(totInteres)} − {formatCurrency(intPagado)}
+                          </p>
                         </div>
                         <div className="rounded-md border p-2">
-                          <p className="text-muted-foreground">Capital insoluto</p>
-                          <p className="font-semibold text-destructive">{formatCurrency(totCapitalPend)}</p>
+                          <p className="text-muted-foreground">Mora pendiente</p>
+                          <p className="font-semibold text-destructive">{formatCurrency(moraPendiente)}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            {formatCurrency(totMoraProg)} − {formatCurrency(moraPagada)}
+                          </p>
                         </div>
+                        <div className="rounded-md border p-2 bg-primary/5">
+                          <p className="text-muted-foreground">Deuda total</p>
+                          <p className="font-semibold text-primary">
+                            {formatCurrency(capInsoluto + intPendiente + moraPendiente)}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">Capital + Interés + Mora</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 rounded-md border bg-muted/30 p-3 text-[11px] leading-relaxed text-muted-foreground">
+                        <p className="font-semibold text-foreground mb-1">¿Cómo se calcula?</p>
+                        <ul className="space-y-0.5 list-disc list-inside">
+                          <li><b>En mora:</b> cuotas sin pago completo cuya <code>fecha_vencimiento</code> &lt; hoy ({todayStr}, hora local).</li>
+                          <li><b>Capital insoluto:</b> <code>monto_aprobado − Σ pagos.capital_pagado</code> registrados en BD.</li>
+                          <li><b>Interés / Mora pendiente:</b> programado en cuotas menos lo aplicado en pagos (jerarquía: Mora → Interés → Capital).</li>
+                        </ul>
                       </div>
                     </>
                   );
