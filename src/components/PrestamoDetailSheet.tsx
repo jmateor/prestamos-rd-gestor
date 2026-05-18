@@ -29,6 +29,15 @@ const estadoBadge: Record<string, string> = {
   pagada:    'bg-success/10 text-success border-success/20',
   parcial:   'bg-primary/10 text-primary border-primary/20',
   vencida:   'bg-destructive/10 text-destructive border-destructive/20',
+  en_mora:   'bg-destructive/10 text-destructive border-destructive/20',
+};
+
+const estadoLabel: Record<string, string> = {
+  pendiente: 'Pendiente',
+  pagada:    'Pagada',
+  parcial:   'Parcial',
+  vencida:   'En mora',
+  en_mora:   'En mora',
 };
 
 const estadoPreBadge: Record<string, string> = {
