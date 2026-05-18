@@ -375,38 +375,102 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
 
               {/* Cuotas tab */}
               <TabsContent value="cuotas">
-                <div className="rounded-md border overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-10">#</TableHead>
-                        <TableHead>Vencimiento</TableHead>
-                        <TableHead>Cuota</TableHead>
-                        <TableHead>Capital</TableHead>
-                        <TableHead>Interés</TableHead>
-                        <TableHead>Mora</TableHead>
-                        <TableHead>Saldo</TableHead>
-                        <TableHead>Estado</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {cuotas?.map((c) => (
-                        <TableRow key={c.id} className={c.estado === 'pagada' ? 'opacity-50' : ''}>
-                          <TableCell className="text-muted-foreground text-xs">{c.numero_cuota}</TableCell>
-                          <TableCell className="text-sm">{formatDate(c.fecha_vencimiento)}</TableCell>
-                          <TableCell className="text-sm font-medium">{formatCurrency(c.monto_cuota)}</TableCell>
-                          <TableCell className="text-sm">{formatCurrency(c.capital)}</TableCell>
-                          <TableCell className="text-sm">{formatCurrency(c.interes)}</TableCell>
-                          <TableCell className="text-sm text-destructive">{formatCurrency(c.mora ?? 0)}</TableCell>
-                          <TableCell className="text-sm">{formatCurrency(c.saldo_pendiente)}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className={`text-xs ${estadoBadge[c.estado] ?? ''}`}>{c.estado}</Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                {(() => {
+                  const todayStr = new Date().toISOString().split('T')[0];
+                  const rows = cuotas ?? [];
+                  const totInteres = rows.reduce((s, c) => s + (c.interes ?? 0), 0);
+                  const totInteresPend = rows.filter(c => c.estado !== 'pagada').reduce((s, c) => s + (c.interes ?? 0), 0);
+                  const totMora = rows.reduce((s, c) => s + (c.mora ?? 0), 0);
+                  const totCapitalPend = rows.filter(c => c.estado !== 'pagada').reduce((s, c) => s + (c.capital ?? 0), 0);
+                  const cntPagadas = rows.filter(c => c.estado === 'pagada').length;
+                  const cntMora = rows.filter(c => c.estado !== 'pagada' && c.fecha_vencimiento < todayStr).length;
+                  const cntPend = rows.length - cntPagadas - cntMora;
+
+                  return (
+                    <>
+                      <div className="mb-3 grid grid-cols-3 gap-2 text-xs">
+                        <div className="rounded-md border bg-success/5 p-2">
+                          <p className="text-muted-foreground">Pagadas</p>
+                          <p className="font-semibold text-success">{cntPagadas}</p>
+                        </div>
+                        <div className="rounded-md border bg-warning/5 p-2">
+                          <p className="text-muted-foreground">Pendientes</p>
+                          <p className="font-semibold text-warning">{cntPend}</p>
+                        </div>
+                        <div className="rounded-md border bg-destructive/5 p-2">
+                          <p className="text-muted-foreground">En mora</p>
+                          <p className="font-semibold text-destructive">{cntMora}</p>
+                        </div>
+                      </div>
+
+                      <div className="rounded-md border overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-10">#</TableHead>
+                              <TableHead>Vencimiento</TableHead>
+                              <TableHead>Cuota</TableHead>
+                              <TableHead>Capital</TableHead>
+                              <TableHead>Interés</TableHead>
+                              <TableHead>Mora</TableHead>
+                              <TableHead>Saldo</TableHead>
+                              <TableHead>Estado</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {rows.map((c) => {
+                              const display = c.estado !== 'pagada' && c.estado !== 'parcial' && c.fecha_vencimiento < todayStr
+                                ? 'en_mora'
+                                : c.estado;
+                              return (
+                                <TableRow key={c.id} className={c.estado === 'pagada' ? 'opacity-60' : ''}>
+                                  <TableCell className="text-muted-foreground text-xs">{c.numero_cuota}</TableCell>
+                                  <TableCell className="text-sm">{formatDate(c.fecha_vencimiento)}</TableCell>
+                                  <TableCell className="text-sm font-medium">{formatCurrency(c.monto_cuota)}</TableCell>
+                                  <TableCell className="text-sm">{formatCurrency(c.capital)}</TableCell>
+                                  <TableCell className="text-sm">{formatCurrency(c.interes)}</TableCell>
+                                  <TableCell className="text-sm text-destructive">{formatCurrency(c.mora ?? 0)}</TableCell>
+                                  <TableCell className="text-sm">{formatCurrency(c.saldo_pendiente)}</TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline" className={`text-xs ${estadoBadge[display] ?? ''}`}>
+                                      {estadoLabel[display] ?? display}
+                                    </Badge>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                            {rows.length > 0 && (
+                              <TableRow className="bg-muted/40 font-medium">
+                                <TableCell colSpan={4} className="text-xs uppercase tracking-wide text-muted-foreground">
+                                  Totales
+                                </TableCell>
+                                <TableCell className="text-sm">{formatCurrency(totInteres)}</TableCell>
+                                <TableCell className="text-sm text-destructive">{formatCurrency(totMora)}</TableCell>
+                                <TableCell className="text-sm">—</TableCell>
+                                <TableCell />
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                        <div className="rounded-md border p-2">
+                          <p className="text-muted-foreground">Interés total</p>
+                          <p className="font-semibold">{formatCurrency(totInteres)}</p>
+                        </div>
+                        <div className="rounded-md border p-2">
+                          <p className="text-muted-foreground">Interés pendiente</p>
+                          <p className="font-semibold">{formatCurrency(totInteresPend)}</p>
+                        </div>
+                        <div className="rounded-md border p-2">
+                          <p className="text-muted-foreground">Capital insoluto</p>
+                          <p className="font-semibold text-destructive">{formatCurrency(totCapitalPend)}</p>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
               </TabsContent>
 
               {/* Registrar pago tab */}
