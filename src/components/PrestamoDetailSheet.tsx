@@ -409,6 +409,8 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
                   const venc = rows.filter(isEnMora).map(c => c.fecha_vencimiento).sort();
                   const diasAtrasoMax = venc.length
                     ? Math.floor((Date.now() - new Date(venc[0] + 'T12:00:00').getTime()) / 86_400_000)
+                    : 0;
+
                   // ── Validaciones de integridad de datos ─────────────────
                   const warnings: string[] = [];
                   if (!prestamo?.monto_aprobado || prestamo.monto_aprobado <= 0)
