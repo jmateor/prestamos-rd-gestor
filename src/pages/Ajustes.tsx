@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Plus, Settings, Users, Landmark, MapPin, UserCheck, Trash2, Save, SlidersHorizontal } from 'lucide-react';
+import { Loader2, Plus, Settings, Users, Landmark, MapPin, UserCheck, Trash2, Save, SlidersHorizontal, Building2, Printer, FileText } from 'lucide-react';
 import {
   useUsuarios, useAsignarRol, useRemoverRol,
   useFinanciamientos, useCrearFinanciamiento, useActualizarFinanciamiento,
@@ -17,6 +17,10 @@ import {
 } from '@/hooks/useAjustes';
 import { useParametrosSistema, useActualizarParametro } from '@/hooks/useParametrosSistema';
 import { useUserRole } from '@/hooks/useUserRole';
+import { EmpresaForm } from '@/components/ajustes/EmpresaForm';
+import { SucursalesManager } from '@/components/ajustes/SucursalesManager';
+import { ImpresionConfig } from '@/components/ajustes/ImpresionConfig';
+import { PlantillasDocumentosManager } from '@/components/ajustes/PlantillasDocumentosManager';
 
 const ROLES = ['admin', 'oficial_credito', 'cajero', 'supervisor'] as const;
 const rolLabel: Record<string, string> = {
