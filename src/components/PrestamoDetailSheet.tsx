@@ -409,10 +409,47 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
                   const venc = rows.filter(isEnMora).map(c => c.fecha_vencimiento).sort();
                   const diasAtrasoMax = venc.length
                     ? Math.floor((Date.now() - new Date(venc[0] + 'T12:00:00').getTime()) / 86_400_000)
-                    : 0;
+                  // ── Validaciones de integridad de datos ─────────────────
+                  const warnings: string[] = [];
+                  if (!prestamo?.monto_aprobado || prestamo.monto_aprobado <= 0)
+                    warnings.push('El préstamo no tiene monto_aprobado válido; el capital insoluto puede ser incorrecto.');
+                  if (!prestamo?.fecha_vencimiento)
+                    warnings.push('Falta fecha_vencimiento del préstamo; no se puede determinar el cierre del cronograma.');
+                  if (!rows.length)
+                    warnings.push('Este préstamo no tiene cuotas generadas. Los totales mostrarán 0.');
+                  const cuotasSinFecha = rows.filter(c => !c.fecha_vencimiento).length;
+                  if (cuotasSinFecha)
+                    warnings.push(`${cuotasSinFecha} cuota(s) sin fecha_vencimiento — se excluirán del cálculo de mora.`);
+                  const cuotasSinMonto = rows.filter(c => !c.monto_cuota || c.monto_cuota <= 0).length;
+                  if (cuotasSinMonto)
+                    warnings.push(`${cuotasSinMonto} cuota(s) sin monto_cuota válido.`);
+                  const pagosSinDesglose = pagosList.filter((p: any) =>
+                    p.capital_pagado == null && p.interes_pagado == null && p.mora_pagada == null,
+                  ).length;
+                  if (pagosSinDesglose)
+                    warnings.push(`${pagosSinDesglose} pago(s) sin desglose capital/interés/mora — el saldo real puede diferir del mostrado.`);
+                  if (capPagado > (prestamo?.monto_aprobado ?? 0) + 0.01)
+                    warnings.push('Los pagos de capital exceden el monto aprobado; revise registros duplicados.');
+                  if (intPagado > totInteres + 0.01)
+                    warnings.push('El interés pagado excede el interés programado; revise los pagos.');
 
                   return (
                     <>
+                      {warnings.length > 0 && (
+                        <Alert variant="destructive" className="mb-3 border-warning/40 bg-warning/5 text-foreground">
+                          <AlertTriangle className="h-4 w-4 text-warning" />
+                          <AlertTitle className="text-warning">Datos incompletos o inconsistentes</AlertTitle>
+                          <AlertDescription>
+                            <ul className="list-disc list-inside space-y-0.5 text-xs mt-1">
+                              {warnings.map((w, i) => <li key={i}>{w}</li>)}
+                            </ul>
+                            <p className="text-[11px] text-muted-foreground mt-2">
+                              Los totales abajo se calculan con los datos disponibles y pueden no reflejar el saldo real hasta corregir lo anterior.
+                            </p>
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
                       <div className="mb-3 grid grid-cols-3 gap-2 text-xs">
                         <div className="rounded-md border bg-success/5 p-2">
                           <p className="text-muted-foreground">Pagadas</p>
