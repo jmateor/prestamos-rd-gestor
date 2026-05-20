@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Plus, Settings, Users, Landmark, MapPin, UserCheck, Trash2, Save, SlidersHorizontal } from 'lucide-react';
+import { Loader2, Plus, Settings, Users, Landmark, MapPin, UserCheck, Trash2, Save, SlidersHorizontal, Building2, Printer, FileText } from 'lucide-react';
 import {
   useUsuarios, useAsignarRol, useRemoverRol,
   useFinanciamientos, useCrearFinanciamiento, useActualizarFinanciamiento,
@@ -17,6 +17,10 @@ import {
 } from '@/hooks/useAjustes';
 import { useParametrosSistema, useActualizarParametro } from '@/hooks/useParametrosSistema';
 import { useUserRole } from '@/hooks/useUserRole';
+import { EmpresaForm } from '@/components/ajustes/EmpresaForm';
+import { SucursalesManager } from '@/components/ajustes/SucursalesManager';
+import { ImpresionConfig } from '@/components/ajustes/ImpresionConfig';
+import { PlantillasDocumentosManager } from '@/components/ajustes/PlantillasDocumentosManager';
 
 const ROLES = ['admin', 'oficial_credito', 'cajero', 'supervisor'] as const;
 const rolLabel: Record<string, string> = {
@@ -435,34 +439,31 @@ export default function Ajustes() {
         <p className="text-muted-foreground">Gestión de usuarios, roles, tasas, parámetros y catálogos</p>
       </div>
 
-      <Tabs defaultValue="usuarios">
-        <TabsList>
-          <TabsTrigger value="usuarios" className="gap-1.5">
-            <Users className="h-4 w-4" /> Usuarios
-          </TabsTrigger>
-          <TabsTrigger value="parametros" className="gap-1.5">
-            <SlidersHorizontal className="h-4 w-4" /> Parámetros
-          </TabsTrigger>
-          <TabsTrigger value="financiamientos" className="gap-1.5">
-            <Landmark className="h-4 w-4" /> Financiamientos
-          </TabsTrigger>
-          <TabsTrigger value="catalogos" className="gap-1.5">
-            <MapPin className="h-4 w-4" /> Catálogos
-          </TabsTrigger>
+      <Tabs defaultValue="empresa">
+        <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="empresa" className="gap-1.5"><Building2 className="h-4 w-4" /> Empresa</TabsTrigger>
+          <TabsTrigger value="impresion" className="gap-1.5"><Printer className="h-4 w-4" /> Impresión</TabsTrigger>
+          <TabsTrigger value="plantillas" className="gap-1.5"><FileText className="h-4 w-4" /> Plantillas</TabsTrigger>
+          <TabsTrigger value="usuarios" className="gap-1.5"><Users className="h-4 w-4" /> Usuarios</TabsTrigger>
+          <TabsTrigger value="parametros" className="gap-1.5"><SlidersHorizontal className="h-4 w-4" /> Parámetros</TabsTrigger>
+          <TabsTrigger value="financiamientos" className="gap-1.5"><Landmark className="h-4 w-4" /> Financiamientos</TabsTrigger>
+          <TabsTrigger value="catalogos" className="gap-1.5"><MapPin className="h-4 w-4" /> Catálogos</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="usuarios" className="mt-4">
-          <UsuariosTab isAdmin={isAdmin} />
+        <TabsContent value="empresa" className="mt-4 space-y-4">
+          <EmpresaForm isAdmin={isAdmin} />
+          <SucursalesManager isAdmin={isAdmin} />
         </TabsContent>
-        <TabsContent value="parametros" className="mt-4">
-          <ParametrosTab isAdmin={isAdmin} />
+        <TabsContent value="impresion" className="mt-4">
+          <ImpresionConfig isAdmin={isAdmin} />
         </TabsContent>
-        <TabsContent value="financiamientos" className="mt-4">
-          <FinanciamientosTab />
+        <TabsContent value="plantillas" className="mt-4">
+          <PlantillasDocumentosManager isAdmin={isAdmin} />
         </TabsContent>
-        <TabsContent value="catalogos" className="mt-4">
-          <CatalogosTab />
-        </TabsContent>
+        <TabsContent value="usuarios" className="mt-4"><UsuariosTab isAdmin={isAdmin} /></TabsContent>
+        <TabsContent value="parametros" className="mt-4"><ParametrosTab isAdmin={isAdmin} /></TabsContent>
+        <TabsContent value="financiamientos" className="mt-4"><FinanciamientosTab /></TabsContent>
+        <TabsContent value="catalogos" className="mt-4"><CatalogosTab /></TabsContent>
       </Tabs>
     </div>
   );

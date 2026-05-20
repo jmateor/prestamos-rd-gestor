@@ -366,6 +366,57 @@ export type Database = {
         }
         Relationships: []
       }
+      configuracion_impresion: {
+        Row: {
+          alineacion_encabezado: string
+          created_at: string
+          frase_pie_recibo: string | null
+          id: string
+          margen_der: number
+          margen_izq: number
+          mostrar_direccion: boolean
+          mostrar_firma_cajero: boolean
+          mostrar_logo: boolean
+          mostrar_qr: boolean
+          mostrar_rnc: boolean
+          pie_legal_contrato: string | null
+          tamano_tirilla: string
+          updated_at: string
+        }
+        Insert: {
+          alineacion_encabezado?: string
+          created_at?: string
+          frase_pie_recibo?: string | null
+          id?: string
+          margen_der?: number
+          margen_izq?: number
+          mostrar_direccion?: boolean
+          mostrar_firma_cajero?: boolean
+          mostrar_logo?: boolean
+          mostrar_qr?: boolean
+          mostrar_rnc?: boolean
+          pie_legal_contrato?: string | null
+          tamano_tirilla?: string
+          updated_at?: string
+        }
+        Update: {
+          alineacion_encabezado?: string
+          created_at?: string
+          frase_pie_recibo?: string | null
+          id?: string
+          margen_der?: number
+          margen_izq?: number
+          mostrar_direccion?: boolean
+          mostrar_firma_cajero?: boolean
+          mostrar_logo?: boolean
+          mostrar_qr?: boolean
+          mostrar_rnc?: boolean
+          pie_legal_contrato?: string | null
+          tamano_tirilla?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contactos_sociales: {
         Row: {
           cliente_id: string
@@ -538,6 +589,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      empresa_info: {
+        Row: {
+          ciudad: string | null
+          created_at: string
+          direccion: string | null
+          email: string | null
+          id: string
+          logo_url: string | null
+          nombre: string
+          provincia: string | null
+          razon_social: string | null
+          regimen_fiscal: string | null
+          rnc: string | null
+          sitio_web: string | null
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          ciudad?: string | null
+          created_at?: string
+          direccion?: string | null
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          nombre?: string
+          provincia?: string | null
+          razon_social?: string | null
+          regimen_fiscal?: string | null
+          rnc?: string | null
+          sitio_web?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ciudad?: string | null
+          created_at?: string
+          direccion?: string | null
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          nombre?: string
+          provincia?: string | null
+          razon_social?: string | null
+          regimen_fiscal?: string | null
+          rnc?: string | null
+          sitio_web?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       financiamientos: {
         Row: {
@@ -1068,6 +1170,45 @@ export type Database = {
         }
         Relationships: []
       }
+      plantillas_documentos: {
+        Row: {
+          activo: boolean
+          actualizado_por: string | null
+          archivo_url: string | null
+          contenido_html: string | null
+          created_at: string
+          id: string
+          nombre: string
+          tipo: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          activo?: boolean
+          actualizado_por?: string | null
+          archivo_url?: string | null
+          contenido_html?: string | null
+          created_at?: string
+          id?: string
+          nombre: string
+          tipo: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          activo?: boolean
+          actualizado_por?: string | null
+          archivo_url?: string | null
+          contenido_html?: string | null
+          created_at?: string
+          id?: string
+          nombre?: string
+          tipo?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       prestamos: {
         Row: {
           banco_id: string | null
@@ -1495,6 +1636,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sucursales: {
+        Row: {
+          activo: boolean | null
+          created_at: string
+          direccion: string | null
+          es_principal: boolean | null
+          id: string
+          nombre: string
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean | null
+          created_at?: string
+          direccion?: string | null
+          es_principal?: boolean | null
+          id?: string
+          nombre: string
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean | null
+          created_at?: string
+          direccion?: string | null
+          es_principal?: boolean | null
+          id?: string
+          nombre?: string
+          telefono?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       sync_queue: {
         Row: {

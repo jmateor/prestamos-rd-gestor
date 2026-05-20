@@ -1,80 +1,102 @@
+## Objetivo
 
+Ampliar el módulo de **Ajustes** para que el administrador pueda parametrizar todo el sistema sin tocar código: información de la empresa, configuración de impresión de recibos/contratos, carga de plantillas legales (acuerdos de pago, pagarés, contratos) y más parámetros operativos. Inspirado en los paneles tipo Alegra POS que enviaste.
 
-# Sistema Integral de Gestión de Préstamos JBM RD
+## Alcance funcional
 
-## Visión General
-Sistema financiero completo para gestionar préstamos personales en República Dominicana, con soporte para cuotas diarias, semanales, quincenales y mensuales. Diseño moderno estilo fintech con colores azules y verdes.
+Reorganizar la página `Ajustes` con una vista tipo "centro de configuración" con tarjetas agrupadas por área, y dentro de cada tarjeta abrir un panel de edición. Sólo el rol **admin** puede modificar; **cajero/oficial** ven en modo lectura.
 
----
+### 1. Empresa / Negocio
+- Nombre comercial, razón social, RNC, dirección, ciudad, provincia, teléfono, email, sitio web.
+- Logo (subida a Cloud Storage, se usará en todos los PDFs).
+- Sucursal principal (nombre, dirección, teléfono) y posibilidad de agregar más sucursales.
+- Régimen fiscal / NCF base para futuras facturas.
 
-## Fase 1 — Autenticación, Roles y Layout Base
+### 2. Impresión y recibos
+- Tamaño de tirilla: 57 mm / 80 mm / Carta.
+- Márgenes izquierdo/derecho en mm.
+- Alineación de encabezado (izquierda / centro / derecha).
+- Toggles: mostrar logo, mostrar RNC, mostrar dirección, mostrar firma del cajero, mostrar QR de verificación.
+- Frase personalizada al pie del recibo (máx. 200 caracteres).
+- Pie legal personalizado para contratos (máx. 500 caracteres).
+- Vista previa en vivo del recibo POS al lado del formulario (como en la captura de Alegra).
 
-- **Login/registro** con email y contraseña usando Lovable Cloud (Supabase Auth)
-- **Tabla de perfiles** (nombre, teléfono, cargo) y **tabla de roles** (admin, oficial_credito, cajero, supervisor) con seguridad RLS
-- **Layout principal**: sidebar izquierdo con navegación (Dashboard, Clientes, Solicitudes, Préstamos, Cobranza, Garantías, Reportes), header con usuario y logout
-- **Diseño fintech**: paleta azul/verde, tipografía limpia, tarjetas con sombras suaves
+### 3. Plantillas legales (documentos)
+Nueva sección donde el admin sube/edita las plantillas que el sistema usa al generar PDFs:
+- Contrato Tripartito (Ley 6186).
+- Pagaré Notarial (Ley 845).
+- Acuerdo de Pago / Reestructuración.
+- Carta de Cobro Extrajudicial.
+- Autorización de descuento de nómina.
+- Aviso de inicio de cobro judicial.
 
-## Fase 2 — Módulo de Clientes (CRM)
+Cada plantilla soporta:
+- Subir archivo `.docx`, `.html` o `.txt` con **variables tipo `{{cliente_nombre}}`, `{{monto}}`, `{{fecha}}`, `{{cuotas}}`** etc.
+- Editor de texto enriquecido en línea (alternativa a subir archivo).
+- Botón "Restaurar plantilla por defecto".
+- Indicador de versión y fecha de última edición.
+- Vista previa con datos de ejemplo.
 
-- **Formulario completo por pestañas**: datos personales, identificación, dirección, contacto, vivienda, información laboral, ingresos, dependientes/hijos, cónyuge, referencias personales y comerciales
-- **Listado de clientes** con búsqueda, filtros y badges de estado
-- **Perfil del cliente** con resumen, historial de préstamos y documentos
-- **Subida de archivos** (foto, cédula, croquis) usando Lovable Cloud Storage
+### 4. Parámetros financieros (ya existe, se amplía)
+Se mantienen los parámetros de `parametros_sistema` y se agregan:
+- Días de gracia antes de aplicar mora.
+- Porcentaje máximo de descuento permitido en saldado.
+- Monto máximo que un cajero puede cobrar sin aprobación.
+- Activar/desactivar firma digital obligatoria al desembolsar.
+- Activar/desactivar OCR de cédula al crear cliente.
+- Activar/desactivar requerimiento de garante.
 
-## Fase 3 — Módulo de Solicitudes
+### 5. Catálogos (ya existe)
+- Zonas, cobradores, bancos (sin cambios).
+- Se agrega: métodos de pago habilitados (toggle por método).
 
-- **Flujo paso a paso**: crear solicitud → datos del cliente → información laboral → registrar garantes/codeudores → adjuntar garantías → evaluación → aprobar/rechazar
-- **Estados de solicitud**: pendiente, en evaluación, aprobada, rechazada
-- **Listado de solicitudes** con filtros por estado, fecha y oficial asignado
-- **Vista detalle** con toda la información consolidada para evaluación
+## Implementación técnica
 
-## Fase 4 — Módulo de Préstamos y Lógica Financiera
+### Base de datos
+Nueva migración con:
 
-- **Creación de préstamo** desde solicitud aprobada: monto, tasa de interés, número de cuotas, frecuencia (diaria/semanal/quincenal/mensual)
-- **Métodos de amortización**: saldo insoluto, cuota fija, interés simple
-- **Cálculo automático** de cuota y generación del calendario de pagos
-- **Estados**: solicitado, aprobado, activo, en mora, cancelado
-- **Listado de préstamos** con filtros y detalle completo con tabla de amortización
+- `empresa_info` (singleton): `nombre`, `razon_social`, `rnc`, `direccion`, `ciudad`, `provincia`, `telefono`, `email`, `sitio_web`, `logo_url`, `regimen_fiscal`.
+- `sucursales`: `nombre`, `direccion`, `telefono`, `es_principal`, `activo`.
+- `configuracion_impresion` (singleton): `tamano_tirilla`, `margen_izq`, `margen_der`, `alineacion_encabezado`, `mostrar_logo`, `mostrar_rnc`, `mostrar_direccion`, `mostrar_firma_cajero`, `mostrar_qr`, `frase_pie_recibo`, `pie_legal_contrato`.
+- `plantillas_documentos`: `tipo` (enum: contrato_tripartito, pagare_notarial, acuerdo_pago, carta_cobro, autorizacion_descuento, aviso_judicial), `contenido_html`, `archivo_url`, `version`, `activo`, `actualizado_por`.
+- Bucket `empresa-assets` (público) para logos.
+- Bucket `plantillas-legales` (privado, sólo admin) para `.docx`.
+- RLS: lectura para autenticados, escritura sólo para `has_role(uid, 'admin')`.
+- Se agregan filas adicionales a `parametros_sistema` para los nuevos toggles.
 
-## Fase 5 — Módulo de Cobranza y Pagos
+### Frontend
+- Refactor de `src/pages/Ajustes.tsx`: pasa de tabs planos a vista tipo "grid de tarjetas" + tabs internos cuando se entra a un área.
+- Nuevos componentes en `src/components/ajustes/`:
+  - `EmpresaForm.tsx`
+  - `SucursalesManager.tsx`
+  - `ImpresionConfig.tsx` con preview en vivo del recibo.
+  - `PlantillasDocumentosManager.tsx` con editor (usa `textarea` + sintaxis `{{var}}`; subida `.docx` opcional).
+  - `ParametrosOperativos.tsx` (toggles).
+- Nuevos hooks: `useEmpresaInfo`, `useSucursales`, `useConfiguracionImpresion`, `usePlantillasDocumentos`.
+- Los generadores PDF existentes (`reciboPagoPDF`, `contratoPDF`, `pagarePDF`, etc.) leen estos parámetros antes de renderizar — se hace en un segundo paso para no romper nada.
 
-- **Calendario de cuotas** con vista diaria/semanal/mensual
-- **Registro de pagos**: monto, método (efectivo, transferencia, depósito), fecha
-- **Control automático de mora**: cálculo de días de atraso e intereses moratorios
-- **Historial de pagos** por préstamo y por cliente
-- **Alertas de cuotas vencidas** y próximos vencimientos
+### Renderizado de plantillas
+- Función `renderTemplate(html, vars)` en `src/lib/plantillas.ts` que reemplaza `{{variable}}` con valores y soporta loops simples `{{#cuotas}}...{{/cuotas}}`.
+- Cuando no hay plantilla cargada en BD, el sistema cae al PDF hardcodeado actual (no se rompe nada).
 
-## Fase 6 — Módulo de Garantías
+### Permisos
+- Todos los formularios usan `useUserRole().isAdmin` para deshabilitar inputs si no es admin.
+- Cajeros pueden **ver** la configuración (transparencia) pero no editarla — consistente con la regla del proyecto.
 
-- **Registro de garantías prendarias**: descripción, valor tasado, estado
-- **Artículos asociados**: serie, modelo, marca, fotos
-- **Vinculación** a solicitudes y préstamos
-- **Galería de fotos** de artículos en garantía
+## Plan de entrega por fases
 
-## Fase 7 — Dashboard Financiero
+1. **Migración + hooks + página rediseñada con tarjetas** (sin contenido nuevo aún, sólo estructura).
+2. **Empresa + Logo + Sucursales** (lectura/escritura completa).
+3. **Configuración de impresión + preview en vivo**.
+4. **Plantillas legales** (editor de texto con variables, sin DOCX aún).
+5. **Conectar plantillas a generadores PDF existentes** (uno por uno: recibo → contrato → pagaré).
+6. **Parámetros operativos extra** (toggles) y métodos de pago habilitados.
+7. *(Opcional)* Subida de `.docx` con conversión a HTML.
 
-- **Tarjetas métricas**: total prestado del mes, cartera activa, cartera en mora, ingresos por intereses, clientes activos
-- **Gráficos**: préstamos por frecuencia (pie chart), tendencia de cobranza (line chart), distribución de mora (bar chart)
-- **Tablas**: últimos préstamos aprobados, próximos vencimientos del día
-- **Filtros** por periodo y sucursal
+Se entregan en commits separados para que puedas probar cada fase.
 
-## Fase 8 — Reportes
+## Confirmaciones que necesito antes de empezar
 
-- **Cartera activa y vencida** con totales y detalle
-- **Clientes nuevos** por periodo
-- **Préstamos por tipo de frecuencia**
-- **Ingresos por interés**
-- **Pagos del día**
-- **Reporte de morosidad** con antigüedad de saldos
-- **Exportación** a formato tabular
-
-## Diseño y UX
-
-- Estilo **fintech moderno** con paleta azul marino (#1a365d) y verde (#38a169)
-- Sidebar colapsable con iconos y labels
-- Formularios organizados en pestañas/pasos
-- Tablas con paginación, búsqueda y ordenamiento
-- Badges de colores para estados (activo=verde, mora=rojo, pendiente=amarillo)
-- Responsive para uso en escritorio y tablet
-- Moneda formateada como RD$ con separadores dominicanos
-
+1. ¿Quieres que arranque por **toda la fase 1+2+3** (estructura + empresa + impresión) en este turno, o prefieres ir fase por fase?
+2. Para las plantillas legales: ¿prefieres **editor de texto enriquecido con variables `{{...}}`** (recomendado, funciona ya) o **subida de `.docx`** (más complejo, requiere librería de conversión)?
+3. ¿Quieres mantener los **PDFs actuales hardcodeados como fallback** cuando no haya plantilla cargada? (recomiendo sí).
