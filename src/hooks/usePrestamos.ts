@@ -228,11 +228,17 @@ export function useCreatePrestamo() {
 
       return prestamo;
     },
-    onSuccess: () => {
+    onSuccess: (prestamo: any) => {
       queryClient.invalidateQueries({ queryKey: ['prestamos'] });
-      queryClient.invalidateQueries({ queryKey: ['solicitudes-aprobadas-pendientes'] });
       queryClient.invalidateQueries({ queryKey: ['solicitudes'] });
-      toast.success('Préstamo desembolsado exitosamente');
+      queryClient.refetchQueries({ queryKey: ['solicitudes-aprobadas-pendientes'] });
+      const monto = Number(prestamo?.monto_aprobado ?? 0).toLocaleString('es-DO', {
+        style: 'currency', currency: 'DOP', minimumFractionDigits: 2,
+      });
+      toast.success(`Préstamo ${prestamo?.numero_prestamo ?? ''} desembolsado`, {
+        description: `Monto: ${monto}`,
+        duration: 6000,
+      });
     },
     onError: (e: any) => toast.error('Error al crear préstamo: ' + e.message),
   });
