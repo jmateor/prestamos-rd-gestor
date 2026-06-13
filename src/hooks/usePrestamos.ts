@@ -187,7 +187,16 @@ export function useCreatePrestamo() {
         .single();
       if (pe) throw pe;
 
-      // 2. Generate amortization table using fecha_inicio_pago as first payment date
+      // 2. Mark solicitud as desembolsada so it no longer appears in pending lists
+      if (input.solicitud_id) {
+        const { error: se } = await supabase
+          .from('solicitudes')
+          .update({ estado: 'desembolsada' })
+          .eq('id', input.solicitud_id);
+        if (se) throw se;
+      }
+
+      // 3. Generate amortization table using fecha_inicio_pago as first payment date
       const fechaPrimerPago = input.fecha_inicio_pago || input.fecha_desembolso;
       const fechaBase = fechaBaseDesde(parseLocalDate(fechaPrimerPago), input.frecuencia_pago);
       const cuotas: CuotaCalc[] = calcAmortizacion(
@@ -199,7 +208,7 @@ export function useCreatePrestamo() {
         fechaBase,
       );
 
-      // 3. Insert cuotas
+      // 4. Insert cuotas
       const cuotasInsert = cuotas.map((c) => ({
         prestamo_id: prestamo.id,
         numero_cuota: c.numero_cuota,
@@ -213,7 +222,7 @@ export function useCreatePrestamo() {
       const { error: ce } = await supabase.from('cuotas').insert(cuotasInsert);
       if (ce) throw ce;
 
-      // 4. Update fecha_vencimiento on prestamo
+      // 5. Update fecha_vencimiento on prestamo
       const lastDate = cuotas[cuotas.length - 1].fecha_vencimiento.toISOString().split('T')[0];
       await supabase.from('prestamos').update({ fecha_vencimiento: lastDate }).eq('id', prestamo.id);
 
@@ -221,6 +230,8 @@ export function useCreatePrestamo() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['prestamos'] });
+      queryClient.invalidateQueries({ queryKey: ['solicitudes-aprobadas-pendientes'] });
+      queryClient.invalidateQueries({ queryKey: ['solicitudes'] });
       toast.success('Préstamo desembolsado exitosamente');
     },
     onError: (e: any) => toast.error('Error al crear préstamo: ' + e.message),
