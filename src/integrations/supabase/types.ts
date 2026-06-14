@@ -590,6 +590,39 @@ export type Database = {
           },
         ]
       }
+      empresa_horarios: {
+        Row: {
+          activo: boolean
+          created_at: string
+          dia_semana: number
+          es_dia_completo: boolean
+          hora_apertura: string
+          hora_cierre: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          dia_semana: number
+          es_dia_completo?: boolean
+          hora_apertura?: string
+          hora_cierre?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          dia_semana?: number
+          es_dia_completo?: boolean
+          hora_apertura?: string
+          hora_cierre?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       empresa_info: {
         Row: {
           ciudad: string | null
@@ -1730,6 +1763,42 @@ export type Database = {
         }
         Relationships: []
       }
+      usuario_horarios: {
+        Row: {
+          activo: boolean
+          created_at: string
+          dia_semana: number
+          es_dia_completo: boolean
+          hora_apertura: string
+          hora_cierre: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          dia_semana: number
+          es_dia_completo?: boolean
+          hora_apertura?: string
+          hora_cierre?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          dia_semana?: number
+          es_dia_completo?: boolean
+          hora_apertura?: string
+          hora_cierre?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       zonas: {
         Row: {
           created_at: string
@@ -1753,11 +1822,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      empresa_abierta: {
+        Args: { _dia_semana: number; _hora_local: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      usuario_puede_operar: {
+        Args: { _dia_semana: number; _hora_local: string; _user_id: string }
         Returns: boolean
       }
     }
