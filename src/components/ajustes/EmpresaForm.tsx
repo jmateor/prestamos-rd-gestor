@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Loader2, Upload, Building2, Save } from 'lucide-react';
+import { Loader2, Upload, Building2, Save, Facebook, Instagram, Linkedin, Youtube, Twitter, Music2, MessageCircle } from 'lucide-react';
 import { useEmpresaInfo, useActualizarEmpresa, subirLogoEmpresa, type EmpresaInfo } from '@/hooks/useConfiguracion';
 import { toast } from 'sonner';
 
