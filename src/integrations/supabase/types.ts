@@ -195,6 +195,78 @@ export type Database = {
           },
         ]
       }
+      citas_clientes: {
+        Row: {
+          asignada_a: string | null
+          cliente_id: string
+          created_at: string
+          estado: string
+          fecha_atencion: string | null
+          fecha_cita: string
+          hora_cita: string
+          id: string
+          motivo: string
+          notas_administrador: string | null
+          notas_oficial: string | null
+          numero_cita: string | null
+          resultado: string | null
+          solicitado_por: string | null
+          solicitud_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          asignada_a?: string | null
+          cliente_id: string
+          created_at?: string
+          estado?: string
+          fecha_atencion?: string | null
+          fecha_cita: string
+          hora_cita: string
+          id?: string
+          motivo: string
+          notas_administrador?: string | null
+          notas_oficial?: string | null
+          numero_cita?: string | null
+          resultado?: string | null
+          solicitado_por?: string | null
+          solicitud_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          asignada_a?: string | null
+          cliente_id?: string
+          created_at?: string
+          estado?: string
+          fecha_atencion?: string | null
+          fecha_cita?: string
+          hora_cita?: string
+          id?: string
+          motivo?: string
+          notas_administrador?: string | null
+          notas_oficial?: string | null
+          numero_cita?: string | null
+          resultado?: string | null
+          solicitado_por?: string | null
+          solicitud_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "citas_clientes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "citas_clientes_solicitud_id_fkey"
+            columns: ["solicitud_id"]
+            isOneToOne: false
+            referencedRelation: "solicitudes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes: {
         Row: {
           alias: string | null
@@ -629,7 +701,10 @@ export type Database = {
           created_at: string
           direccion: string | null
           email: string | null
+          facebook_url: string | null
           id: string
+          instagram_url: string | null
+          linkedin_url: string | null
           logo_url: string | null
           nombre: string
           provincia: string | null
@@ -638,14 +713,21 @@ export type Database = {
           rnc: string | null
           sitio_web: string | null
           telefono: string | null
+          tiktok_url: string | null
+          twitter_url: string | null
           updated_at: string
+          whatsapp_numero: string | null
+          youtube_url: string | null
         }
         Insert: {
           ciudad?: string | null
           created_at?: string
           direccion?: string | null
           email?: string | null
+          facebook_url?: string | null
           id?: string
+          instagram_url?: string | null
+          linkedin_url?: string | null
           logo_url?: string | null
           nombre?: string
           provincia?: string | null
@@ -654,14 +736,21 @@ export type Database = {
           rnc?: string | null
           sitio_web?: string | null
           telefono?: string | null
+          tiktok_url?: string | null
+          twitter_url?: string | null
           updated_at?: string
+          whatsapp_numero?: string | null
+          youtube_url?: string | null
         }
         Update: {
           ciudad?: string | null
           created_at?: string
           direccion?: string | null
           email?: string | null
+          facebook_url?: string | null
           id?: string
+          instagram_url?: string | null
+          linkedin_url?: string | null
           logo_url?: string | null
           nombre?: string
           provincia?: string | null
@@ -670,7 +759,11 @@ export type Database = {
           rnc?: string | null
           sitio_web?: string | null
           telefono?: string | null
+          tiktok_url?: string | null
+          twitter_url?: string | null
           updated_at?: string
+          whatsapp_numero?: string | null
+          youtube_url?: string | null
         }
         Relationships: []
       }
