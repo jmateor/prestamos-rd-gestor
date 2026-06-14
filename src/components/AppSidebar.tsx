@@ -13,6 +13,7 @@ import {
   History,
   
   CreditCard,
+  HelpCircle,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
@@ -44,6 +45,7 @@ const navItems = [
   { title: 'Cierre Caja', url: '/cierre-caja', icon: Wallet },
   { title: 'Bitácora', url: '/bitacora', icon: History },
   { title: 'Ajustes', url: '/ajustes', icon: Settings },
+  { title: 'Centro de Ayuda', url: '/ayuda', icon: HelpCircle },
 ];
 
 export function AppSidebar() {

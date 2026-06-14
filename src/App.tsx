@@ -17,6 +17,7 @@ import Reportes from "./pages/Reportes";
 import Ajustes from "./pages/Ajustes";
 import CierreCaja from "./pages/CierreCaja";
 import Bitacora from "./pages/Bitacora";
+import Ayuda from "./pages/Ayuda";
 
 import CobroPOS from "./pages/CobroPOS";
 import NotFound from "./pages/NotFound";
@@ -45,6 +46,8 @@ const AppRoutes = () => (
     <Route path="/cierre-caja" element={<ProtectedRoute><CierreCaja /></ProtectedRoute>} />
     <Route path="/bitacora" element={<ProtectedRoute><Bitacora /></ProtectedRoute>} />
     <Route path="/cobro-pos" element={<ProtectedRoute><CobroPOS /></ProtectedRoute>} />
+    <Route path="/ayuda" element={<ProtectedRoute><Ayuda /></ProtectedRoute>} />
+    
     
     <Route path="*" element={<NotFound />} />
   </Routes>
