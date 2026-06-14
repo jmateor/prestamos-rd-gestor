@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Loader2, Upload, Building2, Save } from 'lucide-react';
+import { Loader2, Upload, Building2, Save, Facebook, Instagram, Linkedin, Youtube, Twitter, Music2, MessageCircle } from 'lucide-react';
 import { useEmpresaInfo, useActualizarEmpresa, subirLogoEmpresa, type EmpresaInfo } from '@/hooks/useConfiguracion';
 import { toast } from 'sonner';
 
@@ -101,6 +101,37 @@ export function EmpresaForm({ isAdmin }: { isAdmin: boolean }) {
               />
             </div>
           ))}
+        </div>
+
+        {/* Redes sociales */}
+        <div className="border-t pt-4 space-y-3">
+          <p className="text-sm font-medium">Redes Sociales</p>
+          <p className="text-xs text-muted-foreground -mt-2">Aparecerán en recibos, contratos y documentos generados.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {[
+              { key: 'whatsapp_numero', label: 'WhatsApp', icon: MessageCircle, placeholder: '+1 809 000 0000' },
+              { key: 'facebook_url',    label: 'Facebook',  icon: Facebook,  placeholder: 'https://facebook.com/...' },
+              { key: 'instagram_url',   label: 'Instagram', icon: Instagram, placeholder: 'https://instagram.com/...' },
+              { key: 'twitter_url',     label: 'X / Twitter', icon: Twitter, placeholder: 'https://x.com/...' },
+              { key: 'linkedin_url',    label: 'LinkedIn',  icon: Linkedin,  placeholder: 'https://linkedin.com/...' },
+              { key: 'youtube_url',     label: 'YouTube',   icon: Youtube,   placeholder: 'https://youtube.com/@...' },
+              { key: 'tiktok_url',      label: 'TikTok',    icon: Music2,    placeholder: 'https://tiktok.com/@...' },
+            ].map((r) => {
+              const Icon = r.icon;
+              return (
+                <div key={r.key}>
+                  <Label className="text-xs flex items-center gap-1.5"><Icon className="h-3.5 w-3.5" /> {r.label}</Label>
+                  <Input
+                    type="text"
+                    placeholder={r.placeholder}
+                    value={(form as any)[r.key] ?? ''}
+                    disabled={!isAdmin}
+                    onChange={(e) => setForm((p) => ({ ...p, [r.key]: e.target.value }))}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {isAdmin && (
