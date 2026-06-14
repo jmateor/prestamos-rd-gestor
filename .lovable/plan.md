@@ -1,102 +1,84 @@
-## Objetivo
+# Plan: Redes Sociales + Módulo de Citas
 
-Ampliar el módulo de **Ajustes** para que el administrador pueda parametrizar todo el sistema sin tocar código: información de la empresa, configuración de impresión de recibos/contratos, carga de plantillas legales (acuerdos de pago, pagarés, contratos) y más parámetros operativos. Inspirado en los paneles tipo Alegra POS que enviaste.
+## 1. Redes sociales en Información de Empresa
 
-## Alcance funcional
+**Base de datos** — agregar a `empresa_info`:
+- `facebook_url`, `instagram_url`, `twitter_url`, `linkedin_url`, `youtube_url`, `tiktok_url`, `whatsapp_numero` (todos TEXT nullable).
 
-Reorganizar la página `Ajustes` con una vista tipo "centro de configuración" con tarjetas agrupadas por área, y dentro de cada tarjeta abrir un panel de edición. Sólo el rol **admin** puede modificar; **cajero/oficial** ven en modo lectura.
+**UI** — `src/components/ajustes/EmpresaForm.tsx`:
+- Nueva sección "Redes Sociales" con icono por red (Facebook, Instagram, X, LinkedIn, YouTube, TikTok, WhatsApp).
+- Inputs con prefijo del icono y validación opcional de URL.
+- Los enlaces se podrán usar después en recibos/contratos vía plantillas.
 
-### 1. Empresa / Negocio
-- Nombre comercial, razón social, RNC, dirección, ciudad, provincia, teléfono, email, sitio web.
-- Logo (subida a Cloud Storage, se usará en todos los PDFs).
-- Sucursal principal (nombre, dirección, teléfono) y posibilidad de agregar más sucursales.
-- Régimen fiscal / NCF base para futuras facturas.
+## 2. Módulo de Citas con Administrador
 
-### 2. Impresión y recibos
-- Tamaño de tirilla: 57 mm / 80 mm / Carta.
-- Márgenes izquierdo/derecho en mm.
-- Alineación de encabezado (izquierda / centro / derecha).
-- Toggles: mostrar logo, mostrar RNC, mostrar dirección, mostrar firma del cajero, mostrar QR de verificación.
-- Frase personalizada al pie del recibo (máx. 200 caracteres).
-- Pie legal personalizado para contratos (máx. 500 caracteres).
-- Vista previa en vivo del recibo POS al lado del formulario (como en la captura de Alegra).
+### Concepto
+El oficial de crédito, al evaluar una solicitud, puede **programar una cita** entre el cliente y el administrador antes de aprobar el préstamo. El administrador ve sus citas pendientes, atiende al cliente, y desde la misma cita decide: **Aprobar**, **Rechazar** o **Posponer** la solicitud.
 
-### 3. Plantillas legales (documentos)
-Nueva sección donde el admin sube/edita las plantillas que el sistema usa al generar PDFs:
-- Contrato Tripartito (Ley 6186).
-- Pagaré Notarial (Ley 845).
-- Acuerdo de Pago / Reestructuración.
-- Carta de Cobro Extrajudicial.
-- Autorización de descuento de nómina.
-- Aviso de inicio de cobro judicial.
+### Base de datos — nueva tabla `citas_clientes`
 
-Cada plantilla soporta:
-- Subir archivo `.docx`, `.html` o `.txt` con **variables tipo `{{cliente_nombre}}`, `{{monto}}`, `{{fecha}}`, `{{cuotas}}`** etc.
-- Editor de texto enriquecido en línea (alternativa a subir archivo).
-- Botón "Restaurar plantilla por defecto".
-- Indicador de versión y fecha de última edición.
-- Vista previa con datos de ejemplo.
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `id` | uuid PK | |
+| `numero_cita` | text | Secuencial `CITA-000000` |
+| `cliente_id` | uuid → clientes | |
+| `solicitud_id` | uuid → solicitudes (nullable) | Si la cita está ligada a una solicitud |
+| `solicitado_por` | uuid → auth.users | Oficial que solicita |
+| `asignada_a` | uuid → auth.users | Administrador asignado |
+| `fecha_cita` | date | |
+| `hora_cita` | time | |
+| `motivo` | text | Pre-aprobación, revisión garantía, etc. |
+| `notas_oficial` | text | Lo que el oficial quiere que revise el admin |
+| `estado` | text | `programada`, `confirmada`, `atendida`, `cancelada`, `no_asistio` |
+| `resultado` | text | `aprobar`, `rechazar`, `posponer`, null |
+| `notas_administrador` | text | Decisión razonada |
+| `fecha_atencion` | timestamptz | |
+| `created_at` / `updated_at` | timestamptz | |
 
-### 4. Parámetros financieros (ya existe, se amplía)
-Se mantienen los parámetros de `parametros_sistema` y se agregan:
-- Días de gracia antes de aplicar mora.
-- Porcentaje máximo de descuento permitido en saldado.
-- Monto máximo que un cajero puede cobrar sin aprobación.
-- Activar/desactivar firma digital obligatoria al desembolsar.
-- Activar/desactivar OCR de cédula al crear cliente.
-- Activar/desactivar requerimiento de garante.
+RLS: oficial_credito ve las que él solicitó o donde es cliente asignado; admin ve todas. Auth-only.
 
-### 5. Catálogos (ya existe)
-- Zonas, cobradores, bancos (sin cambios).
-- Se agrega: métodos de pago habilitados (toggle por método).
-
-## Implementación técnica
-
-### Base de datos
-Nueva migración con:
-
-- `empresa_info` (singleton): `nombre`, `razon_social`, `rnc`, `direccion`, `ciudad`, `provincia`, `telefono`, `email`, `sitio_web`, `logo_url`, `regimen_fiscal`.
-- `sucursales`: `nombre`, `direccion`, `telefono`, `es_principal`, `activo`.
-- `configuracion_impresion` (singleton): `tamano_tirilla`, `margen_izq`, `margen_der`, `alineacion_encabezado`, `mostrar_logo`, `mostrar_rnc`, `mostrar_direccion`, `mostrar_firma_cajero`, `mostrar_qr`, `frase_pie_recibo`, `pie_legal_contrato`.
-- `plantillas_documentos`: `tipo` (enum: contrato_tripartito, pagare_notarial, acuerdo_pago, carta_cobro, autorizacion_descuento, aviso_judicial), `contenido_html`, `archivo_url`, `version`, `activo`, `actualizado_por`.
-- Bucket `empresa-assets` (público) para logos.
-- Bucket `plantillas-legales` (privado, sólo admin) para `.docx`.
-- RLS: lectura para autenticados, escritura sólo para `has_role(uid, 'admin')`.
-- Se agregan filas adicionales a `parametros_sistema` para los nuevos toggles.
+### Lógica en flujo de solicitudes
+- Nuevo estado opcional en `solicitudes`: `requiere_cita` (boolean) y `cita_id` (uuid).
+- Si una solicitud tiene cita programada **no atendida**, el botón **Aprobar** queda bloqueado con mensaje: "Esta solicitud requiere cita con administrador pendiente".
+- Cuando el admin marca la cita como `atendida` con resultado `aprobar`, se desbloquea la aprobación y se notifica al oficial.
+- Si `rechazar` → la solicitud pasa a `rechazada` automáticamente con motivo desde la cita.
 
 ### Frontend
-- Refactor de `src/pages/Ajustes.tsx`: pasa de tabs planos a vista tipo "grid de tarjetas" + tabs internos cuando se entra a un área.
-- Nuevos componentes en `src/components/ajustes/`:
-  - `EmpresaForm.tsx`
-  - `SucursalesManager.tsx`
-  - `ImpresionConfig.tsx` con preview en vivo del recibo.
-  - `PlantillasDocumentosManager.tsx` con editor (usa `textarea` + sintaxis `{{var}}`; subida `.docx` opcional).
-  - `ParametrosOperativos.tsx` (toggles).
-- Nuevos hooks: `useEmpresaInfo`, `useSucursales`, `useConfiguracionImpresion`, `usePlantillasDocumentos`.
-- Los generadores PDF existentes (`reciboPagoPDF`, `contratoPDF`, `pagarePDF`, etc.) leen estos parámetros antes de renderizar — se hace en un segundo paso para no romper nada.
 
-### Renderizado de plantillas
-- Función `renderTemplate(html, vars)` en `src/lib/plantillas.ts` que reemplaza `{{variable}}` con valores y soporta loops simples `{{#cuotas}}...{{/cuotas}}`.
-- Cuando no hay plantilla cargada en BD, el sistema cae al PDF hardcodeado actual (no se rompe nada).
+**Nuevo módulo `/citas`** (`src/pages/Citas.tsx`):
+- Vista de tarjetas con tabs: **Hoy**, **Próximas**, **Pendientes mías**, **Historial**.
+- Filtros por estado, administrador, cliente.
+- Acción **Nueva Cita** (dialog con cliente, solicitud opcional, fecha/hora, motivo, admin asignado, notas).
+- Click en cita abre **CitaDetailSheet** con datos del cliente, solicitud vinculada (monto, plazo, garantías), notas del oficial, y panel de decisión para el administrador.
 
-### Permisos
-- Todos los formularios usan `useUserRole().isAdmin` para deshabilitar inputs si no es admin.
-- Cajeros pueden **ver** la configuración (transparencia) pero no editarla — consistente con la regla del proyecto.
+**Integración en solicitudes**:
+- En `SolicitudDetailDialog` agregar sección "Citas con administrador" con botón **Programar cita** y lista de citas existentes.
+- Badge "Cita pendiente" en la tabla de Solicitudes.
 
-## Plan de entrega por fases
+**Sidebar**: agregar entrada **Citas** con icono `CalendarClock` entre Cobranza y Reportes.
 
-1. **Migración + hooks + página rediseñada con tarjetas** (sin contenido nuevo aún, sólo estructura).
-2. **Empresa + Logo + Sucursales** (lectura/escritura completa).
-3. **Configuración de impresión + preview en vivo**.
-4. **Plantillas legales** (editor de texto con variables, sin DOCX aún).
-5. **Conectar plantillas a generadores PDF existentes** (uno por uno: recibo → contrato → pagaré).
-6. **Parámetros operativos extra** (toggles) y métodos de pago habilitados.
-7. *(Opcional)* Subida de `.docx` con conversión a HTML.
+**Notificaciones**: en `NotificacionesPanel`, alertas para citas del día y citas atendidas con resultado.
 
-Se entregan en commits separados para que puedas probar cada fase.
+### Hook `useCitas.ts`
+- `useCitas(filtros)` — listado con joins a cliente, solicitud, admin.
+- `useCrearCita`, `useActualizarCita`, `useAtenderCita` (registra resultado y aplica decisión a solicitud si corresponde).
+- `useCitasPendientes()` — para badge en sidebar y notificaciones.
 
-## Confirmaciones que necesito antes de empezar
+## Archivos a crear/editar
 
-1. ¿Quieres que arranque por **toda la fase 1+2+3** (estructura + empresa + impresión) en este turno, o prefieres ir fase por fase?
-2. Para las plantillas legales: ¿prefieres **editor de texto enriquecido con variables `{{...}}`** (recomendado, funciona ya) o **subida de `.docx`** (más complejo, requiere librería de conversión)?
-3. ¿Quieres mantener los **PDFs actuales hardcodeados como fallback** cuando no haya plantilla cargada? (recomiendo sí).
+**Crear**
+- `supabase/migrations/...` (campos redes sociales + tabla citas_clientes + secuencia + grants + RLS)
+- `src/hooks/useCitas.ts`
+- `src/pages/Citas.tsx`
+- `src/components/CitaFormDialog.tsx`
+- `src/components/CitaDetailSheet.tsx`
+
+**Editar**
+- `src/components/ajustes/EmpresaForm.tsx` (sección redes sociales)
+- `src/hooks/useConfiguracion.ts` (extender `EmpresaInfo`)
+- `src/App.tsx` (ruta `/citas`)
+- `src/components/AppSidebar.tsx` (link Citas)
+- `src/components/SolicitudDetailDialog.tsx` (sección citas + bloqueo de aprobación)
+- `src/hooks/useSolicitudes.ts` (validar cita pendiente antes de aprobar)
+
+¿Procedo a implementar todo, o quieres ajustar algo (por ejemplo estados de cita, roles que pueden atender, o ligar las citas también a préstamos ya activos para gestiones de cobranza)?
