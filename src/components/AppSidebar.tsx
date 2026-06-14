@@ -13,6 +13,7 @@ import {
   History,
   
   CreditCard,
+  CalendarClock,
   HelpCircle,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
@@ -39,6 +40,8 @@ const navItems = [
   { title: 'Desembolsos', url: '/desembolsos', icon: Banknote },
   { title: 'Cobranza', url: '/cobranza', icon: Receipt },
   { title: 'Cobro POS', url: '/cobro-pos', icon: CreditCard },
+  { title: 'Citas', url: '/citas', icon: CalendarClock },
+  
   
   
   { title: 'Reportes', url: '/reportes', icon: BarChart3 },
