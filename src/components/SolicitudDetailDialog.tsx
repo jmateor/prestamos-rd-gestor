@@ -82,12 +82,23 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
     defaultValues: { nombre_completo: '', cedula: '', telefono: '', relacion: '', direccion: '', lugar_trabajo: '', ingreso_mensual: 0 },
   });
 
+  const citaPendiente = (citasSolicitud ?? []).find(
+    (c) => c.estado === 'programada' || c.estado === 'confirmada'
+  );
+  const citaRechazada = (citasSolicitud ?? []).find(
+    (c) => c.estado === 'atendida' && c.resultado === 'rechazar'
+  );
+
   const handleEstado = async (estado: string) => {
     if (!solicitudId) return;
     if (estado === 'aprobada' && solicitud?.tiene_garantia) {
       if (!solicitud.tipo_garantia || (solicitud.garantia_valor_estimado ?? 0) <= 0) {
         return;
       }
+    }
+    if (estado === 'aprobada' && citaPendiente) {
+      toast.error('Hay una cita con administrador pendiente. Atiéndela antes de aprobar.');
+      return;
     }
     await updateEstado.mutateAsync({ id: solicitudId, estado, comentarios });
     setComentarios('');
