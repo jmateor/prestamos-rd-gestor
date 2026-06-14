@@ -45,6 +45,7 @@ const navItems = [
   { title: 'Cierre Caja', url: '/cierre-caja', icon: Wallet },
   { title: 'Bitácora', url: '/bitacora', icon: History },
   { title: 'Ajustes', url: '/ajustes', icon: Settings },
+  { title: 'Centro de Ayuda', url: '/ayuda', icon: HelpCircle },
 ];
 
 export function AppSidebar() {
