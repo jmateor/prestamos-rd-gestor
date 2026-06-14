@@ -437,6 +437,53 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
               </Card>
             )}
 
+            {/* Citas con administrador */}
+            <Card className={citaPendiente ? 'border-warning/40 bg-warning/5' : ''}>
+              <CardHeader className="py-3 flex flex-row items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <CalendarClock className="h-4 w-4" /> Citas con Administrador
+                </CardTitle>
+                {canEdit && (
+                  <CitaFormDialog
+                    defaultClienteId={solicitud.cliente_id}
+                    defaultSolicitudId={solicitud.id}
+                    defaultClienteNombre={cliente ? `${cliente.primer_nombre} ${cliente.primer_apellido}` : undefined}
+                    defaultSolicitudNumero={solicitud.numero_solicitud}
+                    trigger={
+                      <Button size="sm" variant="outline" className="gap-1">
+                        <CalendarPlus className="h-3 w-3" /> Programar
+                      </Button>
+                    }
+                  />
+                )}
+              </CardHeader>
+              <CardContent className="pb-3 space-y-2">
+                {(!citasSolicitud || citasSolicitud.length === 0) ? (
+                  <p className="text-xs text-muted-foreground">No hay citas programadas para esta solicitud.</p>
+                ) : (
+                  citasSolicitud.map((c) => (
+                    <div key={c.id} className="flex items-center justify-between text-sm border rounded-md p-2">
+                      <div>
+                        <p className="font-medium">{c.numero_cita} · {new Date(c.fecha_cita + 'T12:00:00').toLocaleDateString('es-DO')} {c.hora_cita.slice(0, 5)}</p>
+                        <p className="text-xs text-muted-foreground">{c.motivo}</p>
+                      </div>
+                      <Badge variant="outline" className="text-xs capitalize">
+                        {c.estado === 'atendida' && c.resultado ? c.resultado : c.estado}
+                      </Badge>
+                    </div>
+                  ))
+                )}
+                {citaPendiente && (
+                  <p className="text-xs text-warning flex items-center gap-1 mt-2">
+                    <Clock className="h-3 w-3" /> Aprobación bloqueada hasta que el administrador atienda la cita.
+                  </p>
+                )}
+                {citaRechazada && (
+                  <p className="text-xs text-destructive">El administrador rechazó la solicitud en cita.</p>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Cotización PDF */}
             <div className="flex gap-2">
               <Button variant="outline" size="sm" className="text-xs" onClick={handleCotizacion}>
@@ -459,7 +506,12 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
                     <Button variant="destructive" className="gap-1" onClick={() => handleEstado('rechazada')} disabled={updateEstado.isPending}>
                       <XCircle className="h-4 w-4" /> Rechazar
                     </Button>
-                    <Button className="gap-1 bg-success hover:bg-success/90" onClick={() => handleEstado('aprobada')} disabled={updateEstado.isPending}>
+                    <Button
+                      className="gap-1 bg-success hover:bg-success/90"
+                      onClick={() => handleEstado('aprobada')}
+                      disabled={updateEstado.isPending || !!citaPendiente}
+                      title={citaPendiente ? 'Hay una cita pendiente con administrador' : ''}
+                    >
                       <CheckCircle className="h-4 w-4" /> Aprobar
                     </Button>
                   </div>
