@@ -29,7 +29,7 @@ export function CitaFormDialog({
 }: Props) {
   const [open, setOpen] = useState(false);
   const crear = useCrearCita();
-  const { data: clientes } = useClientes({ search: '' });
+  const { data: clientes } = useClientes('');
   const { data: admins } = useAdministradores();
 
   const today = new Date().toISOString().slice(0, 10);
