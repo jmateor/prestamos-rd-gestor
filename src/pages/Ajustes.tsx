@@ -455,6 +455,7 @@ export default function Ajustes() {
         <TabsContent value="empresa" className="mt-4 space-y-4">
           <EmpresaForm isAdmin={isAdmin} />
           <HorariosEmpresaManager isAdmin={isAdmin} />
+          <TarjetaPresentacion />
           <SucursalesManager isAdmin={isAdmin} />
         </TabsContent>
         <TabsContent value="impresion" className="mt-4">
