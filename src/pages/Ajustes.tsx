@@ -22,6 +22,7 @@ import { SucursalesManager } from '@/components/ajustes/SucursalesManager';
 import { ImpresionConfig } from '@/components/ajustes/ImpresionConfig';
 import { PlantillasDocumentosManager } from '@/components/ajustes/PlantillasDocumentosManager';
 import { HorariosEmpresaManager } from '@/components/ajustes/HorariosEmpresaManager';
+import { TarjetaPresentacion } from '@/components/ajustes/TarjetaPresentacion';
 
 const ROLES = ['admin', 'oficial_credito', 'cajero', 'supervisor'] as const;
 const rolLabel: Record<string, string> = {
@@ -454,6 +455,7 @@ export default function Ajustes() {
         <TabsContent value="empresa" className="mt-4 space-y-4">
           <EmpresaForm isAdmin={isAdmin} />
           <HorariosEmpresaManager isAdmin={isAdmin} />
+          <TarjetaPresentacion />
           <SucursalesManager isAdmin={isAdmin} />
         </TabsContent>
         <TabsContent value="impresion" className="mt-4">
