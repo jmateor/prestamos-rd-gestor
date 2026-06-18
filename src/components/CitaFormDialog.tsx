@@ -178,7 +178,7 @@ export function CitaFormDialog({
 
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSubmit} disabled={crear.isPending} className="gap-1.5">
+            <Button onClick={handleSubmit} disabled={crear.isPending || !!horarioError} className="gap-1.5">
               {crear.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               Programar
             </Button>
