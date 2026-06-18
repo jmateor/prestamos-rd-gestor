@@ -8,6 +8,7 @@ import {
   LayoutDashboard, Users, FileText, Landmark, Banknote, Receipt, CreditCard,
   BarChart3, Wallet, History, Settings, ShieldCheck, Search, HelpCircle,
   CheckCircle2, ArrowRight, Lightbulb, AlertTriangle,
+  CalendarCheck, IdCard, Clock, Share2, Bell,
 } from 'lucide-react';
 
 type Guia = {
