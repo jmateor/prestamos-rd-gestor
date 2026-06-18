@@ -33,6 +33,7 @@ export function CitaFormDialog({
   const crear = useCrearCita();
   const { data: clientes } = useClientes('');
   const { data: admins } = useAdministradores();
+  const { data: horarios } = useHorariosEmpresa();
 
   const today = new Date().toISOString().slice(0, 10);
   const [form, setForm] = useState({
