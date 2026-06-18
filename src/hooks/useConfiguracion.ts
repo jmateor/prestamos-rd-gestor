@@ -191,3 +191,47 @@ export function useActualizarPlantilla() {
     onError: (e: any) => toast.error('Error: ' + e.message),
   });
 }
+
+// ── Horarios Empresa (lectura para validación) ──────────────────────────────
+export interface HorarioEmpresa {
+  id: string;
+  dia_semana: number;
+  hora_apertura: string;
+  hora_cierre: string;
+  activo: boolean;
+}
+
+export function useHorariosEmpresa() {
+  return useQuery({
+    queryKey: ['empresa_horarios'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('empresa_horarios').select('*').order('dia_semana');
+      if (error) throw error;
+      return (data ?? []) as HorarioEmpresa[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/** Devuelve null si la fecha/hora cae dentro del horario; o mensaje de error. */
+export function validarHorarioCita(
+  fecha: string,
+  hora: string,
+  horarios: HorarioEmpresa[] | undefined,
+): string | null {
+  if (!horarios || horarios.length === 0) return null; // sin horarios = sin validación
+  const dia = new Date(fecha + 'T12:00:00').getDay(); // 0=Domingo
+  const h = horarios.find((r) => r.dia_semana === dia);
+  if (!h || !h.activo) {
+    const nombres = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    return `La empresa no labora los ${nombres[dia]}.`;
+  }
+  const hm = hora.slice(0, 5);
+  const ap = h.hora_apertura.slice(0, 5);
+  const ci = h.hora_cierre.slice(0, 5);
+  if (hm < ap || hm > ci) {
+    return `Hora fuera del horario laboral (${ap} - ${ci}).`;
+  }
+  return null;
+}
