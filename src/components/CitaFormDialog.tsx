@@ -127,6 +127,14 @@ export function CitaFormDialog({
               <Input type="time" value={form.hora_cita} onChange={(e) => setForm({ ...form, hora_cita: e.target.value })} />
             </div>
           </div>
+          {horarioError && (
+            <div className="flex items-start gap-1.5 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-md p-2">
+              <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+              <span>{horarioError}</span>
+            </div>
+          )}
+
+
 
           {/* Administrador */}
           <div>
