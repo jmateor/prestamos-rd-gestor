@@ -29,6 +29,7 @@ export function CitaDetailSheet({ cita, onClose }: { cita: Cita | null; onClose:
   const { isAdmin } = useUserRole();
   const actualizar = useActualizarCita();
   const atender = useAtenderCita();
+  const { data: empresa } = useEmpresaInfo();
   const [notas, setNotas] = useState('');
 
   useEffect(() => {
