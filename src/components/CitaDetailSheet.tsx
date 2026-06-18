@@ -5,9 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle, XCircle, CalendarClock, Loader2, User, FileText, Phone, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle, CalendarClock, Loader2, User, FileText, Phone, AlertCircle, MessageCircle } from 'lucide-react';
 import { useActualizarCita, useAtenderCita, type Cita } from '@/hooks/useCitas';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useEmpresaInfo } from '@/hooks/useConfiguracion';
 import { formatCurrency } from '@/lib/format';
 
 const estadoBadge: Record<string, { class: string; label: string }> = {
