@@ -108,6 +108,11 @@ export function CitaDetailSheet({ cita, onClose }: { cita: Cita | null; onClose:
                 <p className="font-medium">{cl.primer_nombre} {cl.primer_apellido}</p>
                 <p className="text-muted-foreground">Cédula: {cl.cedula}</p>
                 <p className="flex items-center gap-1 text-muted-foreground"><Phone className="h-3 w-3" /> {cl.telefono}</p>
+                {cl.telefono && (cita.estado === 'programada' || cita.estado === 'confirmada') && (
+                  <Button size="sm" variant="outline" className="gap-1.5 mt-2 border-success/40 text-success hover:bg-success/10" onClick={handleWhatsApp}>
+                    <MessageCircle className="h-3.5 w-3.5" /> Enviar recordatorio por WhatsApp
+                  </Button>
+                )}
               </CardContent>
             </Card>
           )}
