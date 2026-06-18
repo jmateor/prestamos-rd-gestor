@@ -5,9 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle, XCircle, CalendarClock, Loader2, User, FileText, Phone, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle, CalendarClock, Loader2, User, FileText, Phone, AlertCircle, MessageCircle } from 'lucide-react';
 import { useActualizarCita, useAtenderCita, type Cita } from '@/hooks/useCitas';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useEmpresaInfo } from '@/hooks/useConfiguracion';
 import { formatCurrency } from '@/lib/format';
 
 const estadoBadge: Record<string, { class: string; label: string }> = {
@@ -28,6 +29,7 @@ export function CitaDetailSheet({ cita, onClose }: { cita: Cita | null; onClose:
   const { isAdmin } = useUserRole();
   const actualizar = useActualizarCita();
   const atender = useAtenderCita();
+  const { data: empresa } = useEmpresaInfo();
   const [notas, setNotas] = useState('');
 
   useEffect(() => {
@@ -48,6 +50,28 @@ export function CitaDetailSheet({ cita, onClose }: { cita: Cita | null; onClose:
   const handleEstado = (estado: Cita['estado']) => {
     actualizar.mutate({ id: cita.id, estado });
   };
+
+  const handleWhatsApp = () => {
+    const telRaw = (cl?.telefono ?? '').replace(/\D/g, '');
+    if (!telRaw) return;
+    // Asegura prefijo país RD (1) si viene como 10 dígitos
+    const tel = telRaw.length === 10 ? '1' + telRaw : telRaw;
+    const fechaFmt = new Date(cita.fecha_cita + 'T12:00:00').toLocaleDateString('es-DO', {
+      weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
+    });
+    const empresaNombre = empresa?.nombre || 'nuestra oficina';
+    const empresaTel = empresa?.telefono ? ` Tel: ${empresa.telefono}.` : '';
+    const lineas = [
+      `Hola ${cl?.primer_nombre ?? ''}, le recordamos su cita en ${empresaNombre}.`,
+      `📅 ${fechaFmt} a las ${cita.hora_cita.slice(0, 5)}`,
+      `📋 Motivo: ${cita.motivo}`,
+      `Ref: ${cita.numero_cita}.${empresaTel}`,
+      `Por favor confirme su asistencia. ¡Gracias!`,
+    ];
+    const msg = encodeURIComponent(lineas.join('\n'));
+    window.open(`https://wa.me/${tel}?text=${msg}`, '_blank', 'noopener,noreferrer');
+  };
+
 
   return (
     <Sheet open={!!cita} onOpenChange={() => onClose()}>
@@ -84,6 +108,11 @@ export function CitaDetailSheet({ cita, onClose }: { cita: Cita | null; onClose:
                 <p className="font-medium">{cl.primer_nombre} {cl.primer_apellido}</p>
                 <p className="text-muted-foreground">Cédula: {cl.cedula}</p>
                 <p className="flex items-center gap-1 text-muted-foreground"><Phone className="h-3 w-3" /> {cl.telefono}</p>
+                {cl.telefono && (cita.estado === 'programada' || cita.estado === 'confirmada') && (
+                  <Button size="sm" variant="outline" className="gap-1.5 mt-2 border-success/40 text-success hover:bg-success/10" onClick={handleWhatsApp}>
+                    <MessageCircle className="h-3.5 w-3.5" /> Enviar recordatorio por WhatsApp
+                  </Button>
+                )}
               </CardContent>
             </Card>
           )}

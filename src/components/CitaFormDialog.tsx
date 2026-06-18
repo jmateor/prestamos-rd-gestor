@@ -8,7 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CalendarPlus, Loader2 } from 'lucide-react';
 import { useCrearCita, useAdministradores } from '@/hooks/useCitas';
 import { useClientes } from '@/hooks/useClientes';
+import { useHorariosEmpresa, validarHorarioCita } from '@/hooks/useConfiguracion';
 import { toast } from 'sonner';
+import { AlertCircle } from 'lucide-react';
 
 interface Props {
   trigger?: React.ReactNode;
@@ -31,6 +33,7 @@ export function CitaFormDialog({
   const crear = useCrearCita();
   const { data: clientes } = useClientes('');
   const { data: admins } = useAdministradores();
+  const { data: horarios } = useHorariosEmpresa();
 
   const today = new Date().toISOString().slice(0, 10);
   const [form, setForm] = useState({
@@ -53,10 +56,13 @@ export function CitaFormDialog({
     }
   }, [open, defaultClienteId, defaultSolicitudId]);
 
+  const horarioError = validarHorarioCita(form.fecha_cita, form.hora_cita, horarios);
+
   const handleSubmit = async () => {
     if (!form.cliente_id) return toast.error('Selecciona un cliente');
     if (!form.fecha_cita || !form.hora_cita) return toast.error('Fecha y hora requeridas');
     if (!form.motivo.trim()) return toast.error('Indica el motivo');
+    if (horarioError) return toast.error(horarioError);
 
     await crear.mutateAsync({
       cliente_id: form.cliente_id,
@@ -121,6 +127,14 @@ export function CitaFormDialog({
               <Input type="time" value={form.hora_cita} onChange={(e) => setForm({ ...form, hora_cita: e.target.value })} />
             </div>
           </div>
+          {horarioError && (
+            <div className="flex items-start gap-1.5 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-md p-2">
+              <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+              <span>{horarioError}</span>
+            </div>
+          )}
+
+
 
           {/* Administrador */}
           <div>
@@ -164,7 +178,7 @@ export function CitaFormDialog({
 
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSubmit} disabled={crear.isPending} className="gap-1.5">
+            <Button onClick={handleSubmit} disabled={crear.isPending || !!horarioError} className="gap-1.5">
               {crear.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               Programar
             </Button>
