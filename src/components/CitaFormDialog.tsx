@@ -8,7 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CalendarPlus, Loader2 } from 'lucide-react';
 import { useCrearCita, useAdministradores } from '@/hooks/useCitas';
 import { useClientes } from '@/hooks/useClientes';
+import { useHorariosEmpresa, validarHorarioCita } from '@/hooks/useConfiguracion';
 import { toast } from 'sonner';
+import { AlertCircle } from 'lucide-react';
 
 interface Props {
   trigger?: React.ReactNode;
