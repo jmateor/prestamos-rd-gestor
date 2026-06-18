@@ -31,6 +31,8 @@ import {
   SidebarHeader,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useCitasPendientesCount } from '@/hooks/useCitas';
 
 const navItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
@@ -53,6 +55,7 @@ const navItems = [
 
 export function AppSidebar() {
   const { signOut, user } = useAuth();
+  const { data: citasPendientes = 0 } = useCitasPendientesCount();
 
   return (
     <Sidebar className="border-r-0">
@@ -85,7 +88,12 @@ export function AppSidebar() {
                       activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
                     >
                       <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
+                      <span className="flex-1">{item.title}</span>
+                      {item.title === 'Citas' && citasPendientes > 0 && (
+                        <Badge className="h-5 min-w-5 px-1.5 bg-primary text-primary-foreground text-[10px]">
+                          {citasPendientes > 99 ? '99+' : citasPendientes}
+                        </Badge>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
