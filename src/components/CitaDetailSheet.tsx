@@ -51,6 +51,28 @@ export function CitaDetailSheet({ cita, onClose }: { cita: Cita | null; onClose:
     actualizar.mutate({ id: cita.id, estado });
   };
 
+  const handleWhatsApp = () => {
+    const telRaw = (cl?.telefono ?? '').replace(/\D/g, '');
+    if (!telRaw) return;
+    // Asegura prefijo país RD (1) si viene como 10 dígitos
+    const tel = telRaw.length === 10 ? '1' + telRaw : telRaw;
+    const fechaFmt = new Date(cita.fecha_cita + 'T12:00:00').toLocaleDateString('es-DO', {
+      weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
+    });
+    const empresaNombre = empresa?.nombre || 'nuestra oficina';
+    const empresaTel = empresa?.telefono ? ` Tel: ${empresa.telefono}.` : '';
+    const lineas = [
+      `Hola ${cl?.primer_nombre ?? ''}, le recordamos su cita en ${empresaNombre}.`,
+      `📅 ${fechaFmt} a las ${cita.hora_cita.slice(0, 5)}`,
+      `📋 Motivo: ${cita.motivo}`,
+      `Ref: ${cita.numero_cita}.${empresaTel}`,
+      `Por favor confirme su asistencia. ¡Gracias!`,
+    ];
+    const msg = encodeURIComponent(lineas.join('\n'));
+    window.open(`https://wa.me/${tel}?text=${msg}`, '_blank', 'noopener,noreferrer');
+  };
+
+
   return (
     <Sheet open={!!cita} onOpenChange={() => onClose()}>
       <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
