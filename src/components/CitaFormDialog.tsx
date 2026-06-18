@@ -56,10 +56,13 @@ export function CitaFormDialog({
     }
   }, [open, defaultClienteId, defaultSolicitudId]);
 
+  const horarioError = validarHorarioCita(form.fecha_cita, form.hora_cita, horarios);
+
   const handleSubmit = async () => {
     if (!form.cliente_id) return toast.error('Selecciona un cliente');
     if (!form.fecha_cita || !form.hora_cita) return toast.error('Fecha y hora requeridas');
     if (!form.motivo.trim()) return toast.error('Indica el motivo');
+    if (horarioError) return toast.error(horarioError);
 
     await crear.mutateAsync({
       cliente_id: form.cliente_id,
