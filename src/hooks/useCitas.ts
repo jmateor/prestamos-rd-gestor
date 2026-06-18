@@ -89,6 +89,22 @@ export function useCitasPendientesCount() {
   });
 }
 
+export function useSolicitudesConCitaPendiente() {
+  return useQuery({
+    queryKey: ['solicitudes-con-cita-pendiente'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('citas_clientes')
+        .select('solicitud_id')
+        .in('estado', ['programada', 'confirmada'])
+        .not('solicitud_id', 'is', null);
+      if (error) throw error;
+      return new Set((data ?? []).map((r: any) => r.solicitud_id as string));
+    },
+    staleTime: 60 * 1000,
+  });
+}
+
 export function useCrearCita() {
   const qc = useQueryClient();
   const { user } = useAuth();

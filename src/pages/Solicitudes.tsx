@@ -4,8 +4,9 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, FileText, Loader2, ShieldCheck } from 'lucide-react';
+import { Search, FileText, Loader2, ShieldCheck, CalendarClock } from 'lucide-react';
 import { useSolicitudes } from '@/hooks/useSolicitudes';
+import { useSolicitudesConCitaPendiente } from '@/hooks/useCitas';
 import { SolicitudFormDialog } from '@/components/SolicitudFormDialog';
 import { SolicitudDetailDialog } from '@/components/SolicitudDetailDialog';
 import { formatCurrency } from '@/lib/format';
@@ -27,6 +28,7 @@ export default function Solicitudes() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const { data: solicitudes, isLoading } = useSolicitudes({ estado: estadoFilter, search });
+  const { data: citasPendientesSet } = useSolicitudesConCitaPendiente();
 
   return (
     <div className="space-y-6">
@@ -104,6 +106,11 @@ export default function Solicitudes() {
                         {(sol as any).tiene_garantia && (
                           <Badge variant="outline" className="ml-2 text-[10px] py-0 bg-primary/5 text-primary border-primary/20">
                             <ShieldCheck className="h-2.5 w-2.5 mr-0.5" /> Garantía
+                          </Badge>
+                        )}
+                        {citasPendientesSet?.has(sol.id) && (
+                          <Badge variant="outline" className="ml-2 text-[10px] py-0 bg-warning/10 text-warning border-warning/20">
+                            <CalendarClock className="h-2.5 w-2.5 mr-0.5" /> Cita pendiente
                           </Badge>
                         )}
                       </TableCell>
