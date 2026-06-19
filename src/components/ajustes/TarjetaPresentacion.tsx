@@ -98,6 +98,12 @@ export function TarjetaPresentacion() {
               </SelectContent>
             </Select>
           </div>
+          <div className="flex items-center gap-2">
+            <Switch id="qr-toggle" checked={showQR} onCheckedChange={setShowQR} />
+            <Label htmlFor="qr-toggle" className="text-xs flex items-center gap-1 cursor-pointer">
+              <QrCode className="h-3.5 w-3.5" /> QR vCard
+            </Label>
+          </div>
           <div className="flex gap-2 ml-auto">
             <Button size="sm" variant="outline" onClick={() => handleDownload('png')} disabled={!!downloading} className="gap-1.5">
               {downloading === 'png' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
