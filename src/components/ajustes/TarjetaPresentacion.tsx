@@ -27,6 +27,16 @@ export function TarjetaPresentacion() {
   const cardRef = useRef<HTMLDivElement>(null);
   const [variant, setVariant] = useState<Variant>('azul');
   const [downloading, setDownloading] = useState<'png' | 'jpg' | null>(null);
+  const [showQR, setShowQR] = useState(true);
+  const [qrDataUrl, setQrDataUrl] = useState<string>('');
+
+  useEffect(() => {
+    if (!empresa || !showQR) { setQrDataUrl(''); return; }
+    const vcard = buildVCard(empresa);
+    QRCode.toDataURL(vcard, { errorCorrectionLevel: 'M', margin: 1, width: 320, color: { dark: '#000000', light: '#ffffff' } })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(''));
+  }, [empresa, showQR]);
 
   if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   if (!empresa) return null;
