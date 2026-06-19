@@ -5,34 +5,51 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, FileText, Save, Eye } from 'lucide-react';
-import { usePlantillas, useActualizarPlantilla } from '@/hooks/useConfiguracion';
-import { renderTemplate, VARIABLES_DISPONIBLES } from '@/lib/plantillas';
+import { usePlantillas, useActualizarPlantilla, useEmpresaInfo } from '@/hooks/useConfiguracion';
+import { renderTemplate, VARIABLES_DISPONIBLES, buildRedesSocialesVars } from '@/lib/plantillas';
 
-const SAMPLE_VARS = {
-  cliente_nombre: 'Juan Pérez',
-  cliente_cedula: '402-1234567-8',
-  cliente_direccion: 'Calle Duarte #12, Santo Domingo',
-  cliente_telefono: '+1 (809) 555-0123',
-  numero_prestamo: 'PRE-000012',
-  monto: 'RD$ 50,000.00',
-  tasa: '5% mensual',
-  plazo: '12 cuotas',
-  frecuencia: 'mensual',
-  fecha_desembolso: '20/05/2026',
-  fecha_vencimiento: '20/05/2027',
-  empresa: { nombre: 'Mi Empresa', rnc: '130-12345-6', direccion: 'Av. Principal #1' },
-  garante_nombre: 'María Gómez',
-  garante_cedula: '001-9876543-2',
-  fecha_hoy: new Date().toLocaleDateString('es-DO'),
-  lugar: 'Santo Domingo',
+const SAMPLE_EMPRESA_FALLBACK = {
+  nombre: 'Mi Empresa',
+  rnc: '130-12345-6',
+  direccion: 'Av. Principal #1',
+  telefono: '(809) 555-0100',
+  email: 'contacto@miempresa.do',
+  sitio_web: 'https://miempresa.do',
+  whatsapp_numero: '18095550100',
+  facebook_url: 'https://facebook.com/miempresa',
+  instagram_url: 'https://instagram.com/miempresa',
 };
 
 export function PlantillasDocumentosManager({ isAdmin }: { isAdmin: boolean }) {
   const { data: plantillas, isLoading } = usePlantillas();
+  const { data: empresa } = useEmpresaInfo();
   const actualizar = useActualizarPlantilla();
   const [selectedId, setSelectedId] = useState<string>('');
   const [contenido, setContenido] = useState<string>('');
   const [showPreview, setShowPreview] = useState(false);
+
+  const empresaSample = empresa ?? SAMPLE_EMPRESA_FALLBACK;
+  const { redes_sociales, redes_sociales_lista } = buildRedesSocialesVars(empresaSample);
+  const SAMPLE_VARS = {
+    cliente_nombre: 'Juan Pérez',
+    cliente_cedula: '402-1234567-8',
+    cliente_direccion: 'Calle Duarte #12, Santo Domingo',
+    cliente_telefono: '+1 (809) 555-0123',
+    numero_prestamo: 'PRE-000012',
+    monto: 'RD$ 50,000.00',
+    tasa: '5% mensual',
+    plazo: '12 cuotas',
+    frecuencia: 'mensual',
+    fecha_desembolso: '20/05/2026',
+    fecha_vencimiento: '20/05/2027',
+    empresa: empresaSample,
+    redes_sociales,
+    redes_sociales_lista,
+    garante_nombre: 'María Gómez',
+    garante_cedula: '001-9876543-2',
+    fecha_hoy: new Date().toLocaleDateString('es-DO'),
+    lugar: 'Santo Domingo',
+  };
 
   if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 

@@ -1,13 +1,16 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   CreditCard, Download, Loader2, Phone, Mail, Globe, MapPin,
-  Facebook, Instagram, Linkedin, Youtube, Twitter, Music2, MessageCircle, Building2,
+  Facebook, Instagram, Linkedin, Youtube, Twitter, Music2, MessageCircle, Building2, QrCode,
 } from 'lucide-react';
-import { useEmpresaInfo } from '@/hooks/useConfiguracion';
+import { useEmpresaInfo, type EmpresaInfo } from '@/hooks/useConfiguracion';
 import { toPng, toJpeg } from 'html-to-image';
+import QRCode from 'qrcode';
 import { toast } from 'sonner';
 
 type Variant = 'azul' | 'oscuro' | 'claro' | 'verde';
@@ -24,6 +27,16 @@ export function TarjetaPresentacion() {
   const cardRef = useRef<HTMLDivElement>(null);
   const [variant, setVariant] = useState<Variant>('azul');
   const [downloading, setDownloading] = useState<'png' | 'jpg' | null>(null);
+  const [showQR, setShowQR] = useState(true);
+  const [qrDataUrl, setQrDataUrl] = useState<string>('');
+
+  useEffect(() => {
+    if (!empresa || !showQR) { setQrDataUrl(''); return; }
+    const vcard = buildVCard(empresa);
+    QRCode.toDataURL(vcard, { errorCorrectionLevel: 'M', margin: 1, width: 320, color: { dark: '#000000', light: '#ffffff' } })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(''));
+  }, [empresa, showQR]);
 
   if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   if (!empresa) return null;
@@ -85,6 +98,12 @@ export function TarjetaPresentacion() {
               </SelectContent>
             </Select>
           </div>
+          <div className="flex items-center gap-2">
+            <Switch id="qr-toggle" checked={showQR} onCheckedChange={setShowQR} />
+            <Label htmlFor="qr-toggle" className="text-xs flex items-center gap-1 cursor-pointer">
+              <QrCode className="h-3.5 w-3.5" /> QR vCard
+            </Label>
+          </div>
           <div className="flex gap-2 ml-auto">
             <Button size="sm" variant="outline" onClick={() => handleDownload('png')} disabled={!!downloading} className="gap-1.5">
               {downloading === 'png' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
@@ -129,12 +148,12 @@ export function TarjetaPresentacion() {
               borderRadius: '50%', background: v.accent, opacity: 0.1,
             }} />
 
-            {/* Top: logo + name */}
+            {/* Top: logo + name + (QR) */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 24, position: 'relative', zIndex: 1 }}>
               <div style={{
                 width: 110, height: 110, borderRadius: 18, background: 'rgba(255,255,255,0.95)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-                boxShadow: '0 6px 18px rgba(0,0,0,0.18)',
+                boxShadow: '0 6px 18px rgba(0,0,0,0.18)', flexShrink: 0,
               }}>
                 {empresa.logo_url ? (
                   <img src={empresa.logo_url} alt="logo" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
@@ -142,12 +161,12 @@ export function TarjetaPresentacion() {
                   <Building2 size={56} color="#1565c0" />
                 )}
               </div>
-              <div style={{ flex: 1 }}>
-                <h1 style={{ margin: 0, fontSize: 46, fontWeight: 800, letterSpacing: -0.5, lineHeight: 1.1 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h1 style={{ margin: 0, fontSize: 42, fontWeight: 800, letterSpacing: -0.5, lineHeight: 1.1 }}>
                   {empresa.nombre || 'Nombre de la empresa'}
                 </h1>
                 {empresa.razon_social && empresa.razon_social !== empresa.nombre && (
-                  <p style={{ margin: '6px 0 0', fontSize: 18, color: v.sub, fontWeight: 500 }}>
+                  <p style={{ margin: '6px 0 0', fontSize: 16, color: v.sub, fontWeight: 500 }}>
                     {empresa.razon_social}
                   </p>
                 )}
@@ -157,10 +176,19 @@ export function TarjetaPresentacion() {
                   </p>
                 )}
               </div>
+              {showQR && qrDataUrl && (
+                <div style={{
+                  width: 150, height: 150, padding: 10, borderRadius: 14, background: '#ffffff',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 6px 18px rgba(0,0,0,0.18)', flexShrink: 0,
+                }}>
+                  <img src={qrDataUrl} alt="QR vCard" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                </div>
+              )}
             </div>
 
             {/* Divider */}
-            <div style={{ height: 1, background: v.border, margin: '32px 0 28px', position: 'relative', zIndex: 1 }} />
+            <div style={{ height: 1, background: v.border, margin: '28px 0 22px', position: 'relative', zIndex: 1 }} />
 
             {/* Info grid */}
             <div style={{
@@ -218,4 +246,22 @@ function cleanHandle(url?: string): string {
   } catch {
     return url;
   }
+}
+
+function buildVCard(e: EmpresaInfo): string {
+  const lines: string[] = ['BEGIN:VCARD', 'VERSION:3.0'];
+  if (e.nombre) lines.push(`FN:${e.nombre}`);
+  if (e.razon_social) lines.push(`ORG:${e.razon_social || e.nombre}`);
+  if (e.telefono) lines.push(`TEL;TYPE=WORK,VOICE:${e.telefono}`);
+  if (e.whatsapp_numero) lines.push(`TEL;TYPE=CELL:${e.whatsapp_numero}`);
+  if (e.email) lines.push(`EMAIL;TYPE=WORK:${e.email}`);
+  if (e.sitio_web) lines.push(`URL:${e.sitio_web}`);
+  const addr = [e.direccion, e.ciudad, e.provincia].filter(Boolean).join(', ');
+  if (addr) lines.push(`ADR;TYPE=WORK:;;${addr};;;;`);
+  if (e.rnc) lines.push(`NOTE:RNC ${e.rnc}`);
+  for (const url of [e.facebook_url, e.instagram_url, e.twitter_url, e.linkedin_url, e.youtube_url, e.tiktok_url]) {
+    if (url) lines.push(`URL:${url}`);
+  }
+  lines.push('END:VCARD');
+  return lines.join('\n');
 }
