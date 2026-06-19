@@ -247,3 +247,21 @@ function cleanHandle(url?: string): string {
     return url;
   }
 }
+
+function buildVCard(e: EmpresaInfo): string {
+  const lines: string[] = ['BEGIN:VCARD', 'VERSION:3.0'];
+  if (e.nombre) lines.push(`FN:${e.nombre}`);
+  if (e.razon_social) lines.push(`ORG:${e.razon_social || e.nombre}`);
+  if (e.telefono) lines.push(`TEL;TYPE=WORK,VOICE:${e.telefono}`);
+  if (e.whatsapp_numero) lines.push(`TEL;TYPE=CELL:${e.whatsapp_numero}`);
+  if (e.email) lines.push(`EMAIL;TYPE=WORK:${e.email}`);
+  if (e.sitio_web) lines.push(`URL:${e.sitio_web}`);
+  const addr = [e.direccion, e.ciudad, e.provincia].filter(Boolean).join(', ');
+  if (addr) lines.push(`ADR;TYPE=WORK:;;${addr};;;;`);
+  if (e.rnc) lines.push(`NOTE:RNC ${e.rnc}`);
+  for (const url of [e.facebook_url, e.instagram_url, e.twitter_url, e.linkedin_url, e.youtube_url, e.tiktok_url]) {
+    if (url) lines.push(`URL:${url}`);
+  }
+  lines.push('END:VCARD');
+  return lines.join('\n');
+}
