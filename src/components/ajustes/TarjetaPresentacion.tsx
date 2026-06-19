@@ -1,13 +1,16 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   CreditCard, Download, Loader2, Phone, Mail, Globe, MapPin,
-  Facebook, Instagram, Linkedin, Youtube, Twitter, Music2, MessageCircle, Building2,
+  Facebook, Instagram, Linkedin, Youtube, Twitter, Music2, MessageCircle, Building2, QrCode,
 } from 'lucide-react';
-import { useEmpresaInfo } from '@/hooks/useConfiguracion';
+import { useEmpresaInfo, type EmpresaInfo } from '@/hooks/useConfiguracion';
 import { toPng, toJpeg } from 'html-to-image';
+import QRCode from 'qrcode';
 import { toast } from 'sonner';
 
 type Variant = 'azul' | 'oscuro' | 'claro' | 'verde';
