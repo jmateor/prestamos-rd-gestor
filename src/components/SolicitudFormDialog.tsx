@@ -168,12 +168,12 @@ export function SolicitudFormDialog() {
         const path = `${solicitudId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
         const { error: upErr } = await supabase.storage.from('solicitud_garantias').upload(path, file);
         if (upErr) throw upErr;
-        const { data: { publicUrl } } = supabase.storage.from('solicitud_garantias').getPublicUrl(path);
+        // Store the path; bucket is private and signed URLs are minted on display
         await (supabase as any).from('solicitud_garantia_fotos').insert({
           solicitud_id: solicitudId,
           tipo: 'foto',
           nombre: file.name,
-          url: publicUrl,
+          url: path,
         });
       }
     } catch (e: any) {

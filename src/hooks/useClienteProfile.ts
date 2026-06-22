@@ -220,7 +220,7 @@ export function usePerfilCrediticio(clienteId: string | undefined) {
   });
 }
 
-// ── Upload document ──
+// ── Upload document (returns the storage PATH; bucket is private) ──
 export async function uploadClienteDocument(
   clienteId: string,
   file: File,
@@ -234,6 +234,6 @@ export async function uploadClienteDocument(
     .upload(path, file, { upsert: true });
   if (error) throw error;
 
-  const { data } = supabase.storage.from('clientes').getPublicUrl(path);
-  return data.publicUrl;
+  // Return the path. Display sites use useSignedUrl() to render it.
+  return path;
 }
