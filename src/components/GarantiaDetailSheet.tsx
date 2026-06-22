@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useGarantiaDocumentos, useUploadGarantiaDoc, useDeleteGarantiaDoc, type GarantiaPrendaria } from '@/hooks/useGarantias';
 import { formatCurrency, formatDate } from '@/lib/format';
+import { SignedImage } from '@/components/SignedImage';
+import { getSignedUrl } from '@/lib/signedUrl';
 import { Upload, Trash2, ExternalLink, Loader2, Car, Home, Package } from 'lucide-react';
 
 const tipoIcon: Record<string, any> = { vehiculo: Car, inmueble: Home, electrodomestico: Package, otro: Package };
@@ -88,15 +90,25 @@ export function GarantiaDetailSheet({ garantia, onClose }: Props) {
               <div className="grid grid-cols-2 gap-2">
                 {docs.map(doc => (
                   <div key={doc.id} className="relative rounded-md border overflow-hidden group">
-                    {doc.url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                      <img src={doc.url} alt={doc.nombre} className="h-28 w-full object-cover" />
+                    {doc.nombre.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                      <SignedImage bucket="garantias" path={doc.url} alt={doc.nombre}
+                        className="h-28 w-full object-cover"
+                        fallbackClassName="h-28 w-full bg-muted/50 flex items-center justify-center" />
                     ) : (
                       <div className="h-28 flex items-center justify-center bg-muted/50 text-xs text-muted-foreground p-2 text-center">{doc.nombre}</div>
                     )}
                     <div className="absolute bottom-0 left-0 right-0 bg-background/80 px-1.5 py-0.5 flex items-center justify-between">
                       <span className="text-[10px] capitalize text-muted-foreground">{doc.tipo}</span>
                       <div className="flex gap-1">
-                        <a href={doc.url} target="_blank" rel="noopener" className="text-muted-foreground hover:text-foreground"><ExternalLink className="h-3 w-3" /></a>
+                        <button
+                          onClick={async () => {
+                            const url = await getSignedUrl('garantias', doc.url, 300);
+                            if (url) window.open(url, '_blank', 'noopener');
+                          }}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                        </button>
                         <button onClick={() => deleteDoc.mutate({ id: doc.id, garantiaId: garantia.id })} className="text-muted-foreground hover:text-destructive">
                           <Trash2 className="h-3 w-3" />
                         </button>

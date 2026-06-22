@@ -20,6 +20,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { ClienteRiskAlert } from '@/components/ClienteRiskAlert';
 import { CreditScoreIndicator } from '@/components/CreditScoreIndicator';
 import { generarCotizacionPDF } from '@/lib/cotizacionPDF';
+import { SignedImage } from '@/components/SignedImage';
+import { getSignedUrl } from '@/lib/signedUrl';
 import { toast } from 'sonner';
 
 const estadoBadge: Record<string, { class: string; label: string }> = {
@@ -349,9 +351,19 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
                       <p className="text-xs font-medium flex items-center gap-1"><Image className="h-3 w-3" /> Fotos del Bien</p>
                       <div className="grid grid-cols-3 gap-2">
                         {garantiaFotos.map((f) => (
-                          <a key={f.id} href={f.url} target="_blank" rel="noopener noreferrer">
-                            <img src={f.url} alt={f.nombre} className="rounded-md border h-24 w-full object-cover hover:opacity-80 transition-opacity" />
-                          </a>
+                          <button
+                            key={f.id}
+                            type="button"
+                            onClick={async () => {
+                              const url = await getSignedUrl('solicitud_garantias', f.url, 300);
+                              if (url) window.open(url, '_blank', 'noopener');
+                            }}
+                            className="block"
+                          >
+                            <SignedImage bucket="solicitud_garantias" path={f.url} alt={f.nombre}
+                              className="rounded-md border h-24 w-full object-cover hover:opacity-80 transition-opacity"
+                              fallbackClassName="rounded-md border h-24 w-full bg-muted flex items-center justify-center" />
+                          </button>
                         ))}
                       </div>
                     </div>
