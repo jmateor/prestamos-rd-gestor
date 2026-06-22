@@ -24,6 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SignaturePad } from '@/components/SignaturePad';
+import { getSignedUrl, fetchAsDataUrl } from '@/lib/signedUrl';
 
 const estadoBadge: Record<string, string> = {
   pendiente: 'bg-warning/10 text-warning border-warning/20',
@@ -157,20 +158,29 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
     toast.success('Abono extraordinario registrado');
   };
 
-  const buildContractData = () => {
+  const buildContractData = async () => {
     if (!prestamo) return null;
     const cuotaCalc = calcAmortizacion(
       prestamo.monto_aprobado, prestamo.tasa_interes / 100, prestamo.plazo_meses,
       prestamo.frecuencia_pago, prestamo.metodo_amortizacion, new Date(prestamo.fecha_desembolso),
     );
+    // Fetch private cédula images as data URLs so jsPDF.addImage works offline
+    const [frontDataUrl, backDataUrl] = await Promise.all([
+      cliente?.cedula_frontal_url
+        ? getSignedUrl('clientes', cliente.cedula_frontal_url, 300).then((u) => (u ? fetchAsDataUrl(u) : null))
+        : Promise.resolve(null),
+      cliente?.cedula_trasera_url
+        ? getSignedUrl('clientes', cliente.cedula_trasera_url, 300).then((u) => (u ? fetchAsDataUrl(u) : null))
+        : Promise.resolve(null),
+    ]);
     return {
       numero_prestamo: prestamo.numero_prestamo,
       cliente_nombre: cliente ? `${cliente.primer_nombre} ${cliente.primer_apellido}` : 'Cliente',
       cliente_cedula: cliente?.cedula ?? '',
       cliente_direccion: cliente?.direccion ?? '',
       cliente_telefono: cliente?.telefono ?? '',
-      cliente_cedula_frontal_url: cliente?.cedula_frontal_url || undefined,
-      cliente_cedula_trasera_url: cliente?.cedula_trasera_url || undefined,
+      cliente_cedula_frontal_url: frontDataUrl || undefined,
+      cliente_cedula_trasera_url: backDataUrl || undefined,
       monto_aprobado: prestamo.monto_aprobado,
       tasa_interes: prestamo.tasa_interes,
       plazo_meses: prestamo.plazo_meses,
@@ -287,8 +297,8 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
 
                 {/* Download buttons */}
                 <div className="flex flex-wrap gap-2 mb-3">
-                  <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={() => {
-                    const d = buildContractData();
+                  <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={async () => {
+                    const d = await buildContractData();
                     if (d) generarContratoPDF({ ...d, firma_cliente: firmaCliente ?? undefined });
                   }}>
                     <FileDown className="h-3.5 w-3.5" /> Contrato PDF
