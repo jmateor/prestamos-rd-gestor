@@ -130,11 +130,10 @@ export function useUploadGarantiaDoc() {
       const { error: uploadError } = await supabase.storage.from('garantias').upload(path, file);
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage.from('garantias').getPublicUrl(path);
-
+      // Store the path (bucket is private; signed URLs are minted on display)
       const { error } = await (supabase as any)
         .from('garantia_documentos')
-        .insert({ garantia_id: garantiaId, tipo, nombre: file.name, url: publicUrl });
+        .insert({ garantia_id: garantiaId, tipo, nombre: file.name, url: path });
       if (error) throw error;
     },
     onSuccess: (_d, vars) => {
