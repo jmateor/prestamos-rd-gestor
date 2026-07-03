@@ -136,6 +136,7 @@ export function PrestamoFormDialog() {
     // Generate desembolso PDF
     if (prestamo && cliente) {
       const cuotaEst = preview?.cuota ?? 0;
+      const logoDataUrl = await getEmpresaLogoDataUrl();
       const doc = generarDesembolsoPDF({
         numero_prestamo: prestamo.numero_prestamo || 'N/A',
         cliente_nombre: `${cliente.primer_nombre} ${cliente.primer_apellido}`,
@@ -150,6 +151,7 @@ export function PrestamoFormDialog() {
         frecuencia: values.frecuencia_pago,
         cuota_estimada: cuotaEst,
         metodo: values.metodo_amortizacion,
+        logo_data_url: logoDataUrl,
       });
       doc.save(`desembolso-${prestamo.numero_prestamo || 'nuevo'}.pdf`);
     }
