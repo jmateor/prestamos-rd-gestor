@@ -7,6 +7,7 @@ import { Loader2, DollarSign, Printer } from 'lucide-react';
 import { useRegistrarPago } from '@/hooks/usePrestamos';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { generarReciboPago } from '@/lib/reciboPagoPDF';
+import { getEmpresaLogoDataUrl } from '@/lib/empresaLogo';
 import { supabase } from '@/integrations/supabase/client';
 import type { CuotaCobranza } from '@/hooks/useCobranza';
 
