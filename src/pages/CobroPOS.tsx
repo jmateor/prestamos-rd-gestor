@@ -13,6 +13,7 @@ import { useRegistrarPago } from '@/hooks/usePrestamos';
 import { useRegistrarAudit } from '@/hooks/useAuditLog';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { generarReciboPago } from '@/lib/reciboPagoPDF';
+import { getEmpresaLogoDataUrl } from '@/lib/empresaLogo';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 
