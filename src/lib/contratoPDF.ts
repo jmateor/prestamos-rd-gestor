@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import { formatCurrency } from '@/lib/format';
+import { drawPdfLogo } from '@/lib/empresaLogo';
 
 export interface ContratoData {
   numero_prestamo: string;
@@ -9,6 +10,7 @@ export interface ContratoData {
   cliente_telefono: string;
   cliente_cedula_frontal_url?: string;
   cliente_cedula_trasera_url?: string;
+  logo_data_url?: string | null;
   firma_cliente?: string; // base64 data URL from signature pad
   monto_aprobado: number;
   tasa_interes: number;
@@ -108,6 +110,7 @@ export function generarContratoPDF(data: ContratoData) {
   // ═══════════════════════════════════════════════════════════
 
   // Header
+  drawPdfLogo(doc, data.logo_data_url, margin, y - 5, 26, 15);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.text('CONTRATO DE PRÉSTAMO', pw / 2, y, { align: 'center' });

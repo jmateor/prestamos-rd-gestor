@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import { formatCurrency } from '@/lib/format';
+import { drawPdfLogo } from '@/lib/empresaLogo';
 
 export interface PagareData {
   numero_prestamo: string;
@@ -25,6 +26,7 @@ export interface PagareData {
     telefono: string;
   } | null;
   firma_cliente?: string;
+  logo_data_url?: string | null;
 }
 
 function formatDateLong(d: string) {
@@ -68,6 +70,7 @@ export function generarPagarePDF(data: PagareData) {
   doc.setLineWidth(0.3);
   doc.rect(17, 14, pw - 34, ph - 28);
 
+  drawPdfLogo(doc, data.logo_data_url, margin, y - 4, 26, 15);
   doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
   doc.text('PAGARÉ NOTARIAL', pw / 2, y, { align: 'center' });

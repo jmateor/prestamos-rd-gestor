@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import { formatCurrency } from '@/lib/format';
+import { drawPdfLogo } from '@/lib/empresaLogo';
 
 export interface EstadoCuentaData {
   cliente_nombre: string;
@@ -25,6 +26,7 @@ export interface EstadoCuentaData {
     prestamo: string;
     referencia: string;
   }[];
+  logo_data_url?: string | null;
 }
 
 export function generarEstadoCuentaPDF(data: EstadoCuentaData) {
@@ -34,6 +36,7 @@ export function generarEstadoCuentaPDF(data: EstadoCuentaData) {
   let y = 20;
 
   // Header
+  drawPdfLogo(doc, data.logo_data_url, margin, y - 5, 26, 15);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.text('ESTADO DE CUENTA', pw / 2, y, { align: 'center' });

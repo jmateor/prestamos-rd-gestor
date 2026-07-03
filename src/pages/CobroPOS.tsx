@@ -13,6 +13,7 @@ import { useRegistrarPago } from '@/hooks/usePrestamos';
 import { useRegistrarAudit } from '@/hooks/useAuditLog';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { generarReciboPago } from '@/lib/reciboPagoPDF';
+import { getEmpresaLogoDataUrl } from '@/lib/empresaLogo';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -282,6 +283,7 @@ export default function CobroPOS() {
     const saldo = cuotasAct?.reduce((a, c) => a + (c.monto_cuota - c.monto_pagado), 0) ?? 0;
     const primeraCuota = pagoResult.cuotasPagadas[0];
 
+    const logoDataUrl = await getEmpresaLogoDataUrl();
     const doc = generarReciboPago({
       monto_pagado: pagoResult.totalPagado,
       fecha_pago: today,
@@ -299,6 +301,7 @@ export default function CobroPOS() {
       monto_recibido: pagoResult.montoRecibido,
       devuelta: pagoResult.devuelta,
       usuario: user?.email ?? '',
+      logo_data_url: logoDataUrl,
     });
 
     doc.save(`recibo-POS-${selectedPrestamo.numero_prestamo}.pdf`);

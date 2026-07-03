@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { generarDesembolsoPDF } from '@/lib/desembolsoPDF';
+import { getEmpresaLogoDataUrl } from '@/lib/empresaLogo';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -135,6 +136,7 @@ export function PrestamoFormDialog() {
     // Generate desembolso PDF
     if (prestamo && cliente) {
       const cuotaEst = preview?.cuota ?? 0;
+      const logoDataUrl = await getEmpresaLogoDataUrl();
       const doc = generarDesembolsoPDF({
         numero_prestamo: prestamo.numero_prestamo || 'N/A',
         cliente_nombre: `${cliente.primer_nombre} ${cliente.primer_apellido}`,
@@ -149,6 +151,7 @@ export function PrestamoFormDialog() {
         frecuencia: values.frecuencia_pago,
         cuota_estimada: cuotaEst,
         metodo: values.metodo_amortizacion,
+        logo_data_url: logoDataUrl,
       });
       doc.save(`desembolso-${prestamo.numero_prestamo || 'nuevo'}.pdf`);
     }

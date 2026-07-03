@@ -19,6 +19,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from '@/hooks/useUserRole';
 import { generarDesembolsoPDF } from '@/lib/desembolsoPDF';
+import { getEmpresaLogoDataUrl } from '@/lib/empresaLogo';
 
 const schema = z.object({
   solicitud_id:        z.string().optional(),
@@ -171,6 +172,7 @@ export default function Desembolsos() {
 
     if (prestamo && cliente) {
       const cuotaEst = preview?.cuota ?? 0;
+      const logoDataUrl = await getEmpresaLogoDataUrl();
       const doc = generarDesembolsoPDF({
         numero_prestamo: prestamo.numero_prestamo || 'N/A',
         cliente_nombre: `${cliente.primer_nombre} ${cliente.primer_apellido}`,
@@ -185,6 +187,7 @@ export default function Desembolsos() {
         frecuencia: values.frecuencia_pago,
         cuota_estimada: cuotaEst,
         metodo: values.metodo_amortizacion,
+        logo_data_url: logoDataUrl,
       });
       doc.save(`desembolso-${prestamo.numero_prestamo || 'nuevo'}.pdf`);
     }

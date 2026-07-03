@@ -25,6 +25,7 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SignaturePad } from '@/components/SignaturePad';
 import { getSignedUrl, fetchAsDataUrl } from '@/lib/signedUrl';
+import { getEmpresaLogoDataUrl } from '@/lib/empresaLogo';
 
 const estadoBadge: Record<string, string> = {
   pendiente: 'bg-warning/10 text-warning border-warning/20',
@@ -164,14 +165,15 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
       prestamo.monto_aprobado, prestamo.tasa_interes / 100, prestamo.plazo_meses,
       prestamo.frecuencia_pago, prestamo.metodo_amortizacion, new Date(prestamo.fecha_desembolso),
     );
-    // Fetch private cédula images as data URLs so jsPDF.addImage works offline
-    const [frontDataUrl, backDataUrl] = await Promise.all([
+    // Fetch private cédula images + logo as data URLs so jsPDF.addImage works offline
+    const [frontDataUrl, backDataUrl, logoDataUrl] = await Promise.all([
       cliente?.cedula_frontal_url
         ? getSignedUrl('clientes', cliente.cedula_frontal_url, 300).then((u) => (u ? fetchAsDataUrl(u) : null))
         : Promise.resolve(null),
       cliente?.cedula_trasera_url
         ? getSignedUrl('clientes', cliente.cedula_trasera_url, 300).then((u) => (u ? fetchAsDataUrl(u) : null))
         : Promise.resolve(null),
+      getEmpresaLogoDataUrl(),
     ]);
     return {
       numero_prestamo: prestamo.numero_prestamo,
@@ -181,6 +183,7 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
       cliente_telefono: cliente?.telefono ?? '',
       cliente_cedula_frontal_url: frontDataUrl || undefined,
       cliente_cedula_trasera_url: backDataUrl || undefined,
+      logo_data_url: logoDataUrl,
       monto_aprobado: prestamo.monto_aprobado,
       tasa_interes: prestamo.tasa_interes,
       plazo_meses: prestamo.plazo_meses,
@@ -217,8 +220,9 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
     };
   };
 
-  const handleCronogramaPDF = () => {
+  const handleCronogramaPDF = async () => {
     if (!prestamo || !cuotas) return;
+    const logoDataUrl = await getEmpresaLogoDataUrl();
     generarCronogramaPDF({
       numero_prestamo: prestamo.numero_prestamo,
       cliente_nombre: cliente ? `${cliente.primer_nombre} ${cliente.primer_apellido}` : 'Cliente',
@@ -229,6 +233,7 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
       frecuencia_pago: prestamo.frecuencia_pago,
       metodo_amortizacion: prestamo.metodo_amortizacion,
       fecha_desembolso: prestamo.fecha_desembolso,
+      logo_data_url: logoDataUrl,
       cuotas: cuotas.map((c) => ({
         numero_cuota: c.numero_cuota,
         fecha_vencimiento: c.fecha_vencimiento,
@@ -241,14 +246,15 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
     });
   };
 
-  const handleEstadoCuenta = () => {
+  const handleEstadoCuenta = async () => {
     if (!cliente || !histPrestamos.data || !histPagos.data) return;
-    const today = new Date().toISOString().split('T')[0];
+    const logoDataUrl = await getEmpresaLogoDataUrl();
     generarEstadoCuentaPDF({
       cliente_nombre: `${cliente.primer_nombre} ${cliente.primer_apellido}`,
       cliente_cedula: cliente.cedula,
       cliente_telefono: cliente.telefono,
       cliente_direccion: cliente.direccion ?? '',
+      logo_data_url: logoDataUrl,
       prestamos: histPrestamos.data.map((p) => ({
         numero_prestamo: p.numero_prestamo,
         monto_aprobado: p.monto_aprobado,
@@ -266,6 +272,7 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
       })),
     });
   };
+
 
   return (
     <Sheet open={!!prestamoId} onOpenChange={() => onClose()}>
@@ -303,12 +310,13 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
                   }}>
                     <FileDown className="h-3.5 w-3.5" /> Contrato PDF
                   </Button>
-                  <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={() => {
+                  <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={async () => {
                     if (!prestamo || !cliente) return;
                     const cuotaCalc = calcAmortizacion(
                       prestamo.monto_aprobado, prestamo.tasa_interes / 100, prestamo.plazo_meses,
                       prestamo.frecuencia_pago, prestamo.metodo_amortizacion, new Date(prestamo.fecha_desembolso),
                     );
+                    const logoDataUrl = await getEmpresaLogoDataUrl();
                     generarPagarePDF({
                       numero_prestamo: prestamo.numero_prestamo,
                       lugar: cliente.ciudad || cliente.provincia || 'Santo Domingo',
@@ -333,6 +341,7 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
                         telefono: garante.telefono,
                       } : null,
                       firma_cliente: firmaCliente ?? undefined,
+                      logo_data_url: logoDataUrl,
                     });
                   }}>
                     <FileDown className="h-3.5 w-3.5" /> Pagaré Notarial

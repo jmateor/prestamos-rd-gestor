@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import { formatCurrency, formatDate } from '@/lib/format';
+import { drawPdfLogo } from '@/lib/empresaLogo';
 
 export interface DesembolsoData {
   numero_prestamo: string;
@@ -15,6 +16,7 @@ export interface DesembolsoData {
   frecuencia: string;
   cuota_estimada: number;
   metodo: string;
+  logo_data_url?: string | null;
 }
 
 const frecLabel: Record<string, string> = {
@@ -27,6 +29,7 @@ export function generarDesembolsoPDF(data: DesembolsoData): jsPDF {
   let y = 15;
 
   doc.setFont('helvetica', 'bold');
+  drawPdfLogo(doc, data.logo_data_url, 15, y - 5, 26, 15);
   doc.setFontSize(16);
   doc.text('COMPROBANTE DE DESEMBOLSO', w / 2, y, { align: 'center' });
   y += 8;

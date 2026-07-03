@@ -7,6 +7,7 @@ import { Loader2, DollarSign, Printer } from 'lucide-react';
 import { useRegistrarPago } from '@/hooks/usePrestamos';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { generarReciboPago } from '@/lib/reciboPagoPDF';
+import { getEmpresaLogoDataUrl } from '@/lib/empresaLogo';
 import { supabase } from '@/integrations/supabase/client';
 import type { CuotaCobranza } from '@/hooks/useCobranza';
 
@@ -63,6 +64,7 @@ export function PagoRapidoDialog({ cuota, onClose }: Props) {
 
     const nuevoAcumulado = cuota.monto_pagado + montoPagado;
 
+    const logoDataUrl = await getEmpresaLogoDataUrl();
     const doc = generarReciboPago({
       monto_pagado: montoPagado,
       fecha_pago: form.fecha,
@@ -79,6 +81,7 @@ export function PagoRapidoDialog({ cuota, onClose }: Props) {
       cliente_cedula: cliente?.cedula ?? '—',
       cuotas_restantes: cuotasPendientes.length,
       saldo_total_pendiente: Math.max(0, saldoPendiente),
+      logo_data_url: logoDataUrl,
     });
 
     // Download PDF directly

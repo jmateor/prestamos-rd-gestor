@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import { formatCurrency, formatDate } from '@/lib/format';
+import { detectImageFormat } from '@/lib/empresaLogo';
 
 export interface ReciboPagoData {
   monto_pagado: number;
@@ -19,6 +20,7 @@ export interface ReciboPagoData {
   monto_recibido?: number;
   devuelta?: number;
   usuario?: string;
+  logo_data_url?: string | null;
 }
 
 const metodoLabel: Record<string, string> = {
@@ -54,6 +56,13 @@ export function generarReciboPago(data: ReciboPagoData): jsPDF {
   };
 
   // Header
+  if (data.logo_data_url) {
+    try {
+      const lw = 20, lh = 12;
+      doc.addImage(data.logo_data_url, detectImageFormat(data.logo_data_url), (w - lw) / 2, y - 2, lw, lh, undefined, 'FAST');
+      y += lh + 1;
+    } catch (e) { console.warn('recibo logo', e); }
+  }
   doc.setFont('helvetica', 'bold');
   center('COMPROBANTE DE PAGO', y, 10);
   y += 6;
