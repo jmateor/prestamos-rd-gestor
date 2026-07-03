@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { calcAmortizacion, totalCuotas, type CuotaCalc } from '@/lib/amortizacion';
+import { drawPdfLogo } from '@/lib/empresaLogo';
 
 export interface CotizacionData {
   cliente_nombre: string;
