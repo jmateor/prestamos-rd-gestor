@@ -64,6 +64,7 @@ export function PagoRapidoDialog({ cuota, onClose }: Props) {
 
     const nuevoAcumulado = cuota.monto_pagado + montoPagado;
 
+    const logoDataUrl = await getEmpresaLogoDataUrl();
     const doc = generarReciboPago({
       monto_pagado: montoPagado,
       fecha_pago: form.fecha,
@@ -80,6 +81,7 @@ export function PagoRapidoDialog({ cuota, onClose }: Props) {
       cliente_cedula: cliente?.cedula ?? '—',
       cuotas_restantes: cuotasPendientes.length,
       saldo_total_pendiente: Math.max(0, saldoPendiente),
+      logo_data_url: logoDataUrl,
     });
 
     // Download PDF directly
