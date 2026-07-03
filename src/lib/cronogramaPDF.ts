@@ -21,6 +21,7 @@ export interface CronogramaData {
     monto_cuota: number;
     saldo_pendiente: number;
   }[];
+  logo_data_url?: string | null;
 }
 
 const frecLabel: Record<string, string> = {
