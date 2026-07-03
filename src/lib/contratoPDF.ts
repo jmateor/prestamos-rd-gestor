@@ -110,6 +110,7 @@ export function generarContratoPDF(data: ContratoData) {
   // ═══════════════════════════════════════════════════════════
 
   // Header
+  drawPdfLogo(doc, data.logo_data_url, margin, y - 5, 26, 15);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.text('CONTRATO DE PRÉSTAMO', pw / 2, y, { align: 'center' });
