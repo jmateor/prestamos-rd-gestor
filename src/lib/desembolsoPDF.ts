@@ -16,6 +16,7 @@ export interface DesembolsoData {
   frecuencia: string;
   cuota_estimada: number;
   metodo: string;
+  logo_data_url?: string | null;
 }
 
 const frecLabel: Record<string, string> = {
