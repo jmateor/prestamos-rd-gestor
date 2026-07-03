@@ -220,8 +220,9 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
     };
   };
 
-  const handleCronogramaPDF = () => {
+  const handleCronogramaPDF = async () => {
     if (!prestamo || !cuotas) return;
+    const logoDataUrl = await getEmpresaLogoDataUrl();
     generarCronogramaPDF({
       numero_prestamo: prestamo.numero_prestamo,
       cliente_nombre: cliente ? `${cliente.primer_nombre} ${cliente.primer_apellido}` : 'Cliente',
@@ -232,6 +233,7 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
       frecuencia_pago: prestamo.frecuencia_pago,
       metodo_amortizacion: prestamo.metodo_amortizacion,
       fecha_desembolso: prestamo.fecha_desembolso,
+      logo_data_url: logoDataUrl,
       cuotas: cuotas.map((c) => ({
         numero_cuota: c.numero_cuota,
         fecha_vencimiento: c.fecha_vencimiento,
@@ -240,6 +242,33 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
         mora: c.mora ?? 0,
         monto_cuota: c.monto_cuota,
         saldo_pendiente: c.saldo_pendiente,
+      })),
+    });
+  };
+
+  const handleEstadoCuenta = async () => {
+    if (!cliente || !histPrestamos.data || !histPagos.data) return;
+    const logoDataUrl = await getEmpresaLogoDataUrl();
+    generarEstadoCuentaPDF({
+      cliente_nombre: `${cliente.primer_nombre} ${cliente.primer_apellido}`,
+      cliente_cedula: cliente.cedula,
+      cliente_telefono: cliente.telefono,
+      cliente_direccion: cliente.direccion ?? '',
+      logo_data_url: logoDataUrl,
+      prestamos: histPrestamos.data.map((p) => ({
+        numero_prestamo: p.numero_prestamo,
+        monto_aprobado: p.monto_aprobado,
+        tasa_interes: p.tasa_interes,
+        estado: p.estado,
+        fecha_desembolso: p.fecha_desembolso,
+        total_pagado: 0, saldo_pendiente: 0, cuotas_pagadas: 0, cuotas_total: 0, cuotas_vencidas: 0,
+      })),
+      pagos: histPagos.data.map((p) => ({
+        fecha: p.fecha_pago,
+        monto: p.monto_pagado,
+        metodo: p.metodo_pago,
+        prestamo: p.prestamos?.numero_prestamo ?? '',
+        referencia: p.referencia ?? '',
       })),
     });
   };
