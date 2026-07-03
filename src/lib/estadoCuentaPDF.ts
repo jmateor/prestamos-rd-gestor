@@ -26,6 +26,7 @@ export interface EstadoCuentaData {
     prestamo: string;
     referencia: string;
   }[];
+  logo_data_url?: string | null;
 }
 
 export function generarEstadoCuentaPDF(data: EstadoCuentaData) {
