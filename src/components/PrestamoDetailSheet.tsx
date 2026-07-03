@@ -273,31 +273,6 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
     });
   };
 
-  const handleEstadoCuenta = () => {
-    if (!cliente || !histPrestamos.data || !histPagos.data) return;
-    const today = new Date().toISOString().split('T')[0];
-    generarEstadoCuentaPDF({
-      cliente_nombre: `${cliente.primer_nombre} ${cliente.primer_apellido}`,
-      cliente_cedula: cliente.cedula,
-      cliente_telefono: cliente.telefono,
-      cliente_direccion: cliente.direccion ?? '',
-      prestamos: histPrestamos.data.map((p) => ({
-        numero_prestamo: p.numero_prestamo,
-        monto_aprobado: p.monto_aprobado,
-        tasa_interes: p.tasa_interes,
-        estado: p.estado,
-        fecha_desembolso: p.fecha_desembolso,
-        total_pagado: 0, saldo_pendiente: 0, cuotas_pagadas: 0, cuotas_total: 0, cuotas_vencidas: 0,
-      })),
-      pagos: histPagos.data.map((p) => ({
-        fecha: p.fecha_pago,
-        monto: p.monto_pagado,
-        metodo: p.metodo_pago,
-        prestamo: p.prestamos?.numero_prestamo ?? '',
-        referencia: p.referencia ?? '',
-      })),
-    });
-  };
 
   return (
     <Sheet open={!!prestamoId} onOpenChange={() => onClose()}>
