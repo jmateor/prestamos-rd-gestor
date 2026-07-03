@@ -36,6 +36,7 @@ export function generarEstadoCuentaPDF(data: EstadoCuentaData) {
   let y = 20;
 
   // Header
+  drawPdfLogo(doc, data.logo_data_url, margin, y - 5, 26, 15);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.text('ESTADO DE CUENTA', pw / 2, y, { align: 'center' });
