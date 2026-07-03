@@ -29,6 +29,7 @@ export function generarDesembolsoPDF(data: DesembolsoData): jsPDF {
   let y = 15;
 
   doc.setFont('helvetica', 'bold');
+  drawPdfLogo(doc, data.logo_data_url, 15, y - 5, 26, 15);
   doc.setFontSize(16);
   doc.text('COMPROBANTE DE DESEMBOLSO', w / 2, y, { align: 'center' });
   y += 8;
