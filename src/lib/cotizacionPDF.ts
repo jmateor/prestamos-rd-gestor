@@ -31,6 +31,7 @@ export function generarCotizacionPDF(data: CotizacionData): jsPDF {
   let y = 15;
 
   // Header
+  drawPdfLogo(doc, data.logo_data_url, 15, y - 5, 26, 15);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   doc.text('COTIZACIÓN DE PRÉSTAMO', w / 2, y, { align: 'center' });
