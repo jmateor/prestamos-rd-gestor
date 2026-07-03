@@ -20,6 +20,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { ClienteRiskAlert } from '@/components/ClienteRiskAlert';
 import { CreditScoreIndicator } from '@/components/CreditScoreIndicator';
 import { generarCotizacionPDF } from '@/lib/cotizacionPDF';
+import { getEmpresaLogoDataUrl } from '@/lib/empresaLogo';
 import { SignedImage } from '@/components/SignedImage';
 import { getSignedUrl } from '@/lib/signedUrl';
 import { toast } from 'sonner';
