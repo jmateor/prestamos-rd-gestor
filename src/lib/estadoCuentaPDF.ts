@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import { formatCurrency } from '@/lib/format';
+import { drawPdfLogo } from '@/lib/empresaLogo';
 
 export interface EstadoCuentaData {
   cliente_nombre: string;
