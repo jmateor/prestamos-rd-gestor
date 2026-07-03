@@ -25,6 +25,7 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SignaturePad } from '@/components/SignaturePad';
 import { getSignedUrl, fetchAsDataUrl } from '@/lib/signedUrl';
+import { getEmpresaLogoDataUrl } from '@/lib/empresaLogo';
 
 const estadoBadge: Record<string, string> = {
   pendiente: 'bg-warning/10 text-warning border-warning/20',
