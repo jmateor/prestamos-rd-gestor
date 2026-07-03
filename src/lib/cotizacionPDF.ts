@@ -14,6 +14,7 @@ export interface CotizacionData {
   gastos_legales?: number;
   gastos_cierre?: number;
   fecha?: string;
+  logo_data_url?: string | null;
 }
 
 const frecLabel: Record<string, string> = {
