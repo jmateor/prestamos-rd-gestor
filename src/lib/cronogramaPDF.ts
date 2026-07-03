@@ -40,6 +40,7 @@ export function generarCronogramaPDF(data: CronogramaData) {
   let y = 20;
 
   const drawHeader = () => {
+    drawPdfLogo(doc, data.logo_data_url, margin, y - 5, 24, 14);
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text('CRONOGRAMA DE PAGOS', pw / 2, y, { align: 'center' });
