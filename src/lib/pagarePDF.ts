@@ -70,6 +70,7 @@ export function generarPagarePDF(data: PagareData) {
   doc.setLineWidth(0.3);
   doc.rect(17, 14, pw - 34, ph - 28);
 
+  drawPdfLogo(doc, data.logo_data_url, margin, y - 4, 26, 15);
   doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
   doc.text('PAGARÉ NOTARIAL', pw / 2, y, { align: 'center' });
