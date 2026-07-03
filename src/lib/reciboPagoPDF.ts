@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import { formatCurrency, formatDate } from '@/lib/format';
+import { detectImageFormat } from '@/lib/empresaLogo';
 
 export interface ReciboPagoData {
   monto_pagado: number;
