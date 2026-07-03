@@ -165,14 +165,15 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
       prestamo.monto_aprobado, prestamo.tasa_interes / 100, prestamo.plazo_meses,
       prestamo.frecuencia_pago, prestamo.metodo_amortizacion, new Date(prestamo.fecha_desembolso),
     );
-    // Fetch private cédula images as data URLs so jsPDF.addImage works offline
-    const [frontDataUrl, backDataUrl] = await Promise.all([
+    // Fetch private cédula images + logo as data URLs so jsPDF.addImage works offline
+    const [frontDataUrl, backDataUrl, logoDataUrl] = await Promise.all([
       cliente?.cedula_frontal_url
         ? getSignedUrl('clientes', cliente.cedula_frontal_url, 300).then((u) => (u ? fetchAsDataUrl(u) : null))
         : Promise.resolve(null),
       cliente?.cedula_trasera_url
         ? getSignedUrl('clientes', cliente.cedula_trasera_url, 300).then((u) => (u ? fetchAsDataUrl(u) : null))
         : Promise.resolve(null),
+      getEmpresaLogoDataUrl(),
     ]);
     return {
       numero_prestamo: prestamo.numero_prestamo,
