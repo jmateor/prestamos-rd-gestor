@@ -136,9 +136,10 @@ export function SolicitudFormDialog() {
 
   const montoNeto = (watched.monto_solicitado || 0) - (watched.gastos_legales || 0) - (watched.gastos_cierre || 0);
 
-  const handleCotizacionPDF = () => {
+  const handleCotizacionPDF = async () => {
     const sel = clientes?.find(c => c.id === watched.cliente_id);
     if (!sel) { toast.error('Seleccione un cliente primero'); return; }
+    const logoDataUrl = await getEmpresaLogoDataUrl();
     const doc = generarCotizacionPDF({
       cliente_nombre: `${sel.primer_nombre} ${sel.primer_apellido}`,
       cliente_cedula: sel.cedula,
@@ -149,6 +150,7 @@ export function SolicitudFormDialog() {
       metodo: watched.tipo_amortizacion || 'cuota_fija',
       gastos_legales: watched.gastos_legales,
       gastos_cierre: watched.gastos_cierre,
+      logo_data_url: logoDataUrl,
     });
     doc.save(`cotizacion-${sel.cedula}.pdf`);
     toast.success('Cotización PDF generada');
