@@ -20,6 +20,7 @@ export interface ReciboPagoData {
   monto_recibido?: number;
   devuelta?: number;
   usuario?: string;
+  logo_data_url?: string | null;
 }
 
 const metodoLabel: Record<string, string> = {
