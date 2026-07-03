@@ -310,12 +310,13 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
                   }}>
                     <FileDown className="h-3.5 w-3.5" /> Contrato PDF
                   </Button>
-                  <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={() => {
+                  <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={async () => {
                     if (!prestamo || !cliente) return;
                     const cuotaCalc = calcAmortizacion(
                       prestamo.monto_aprobado, prestamo.tasa_interes / 100, prestamo.plazo_meses,
                       prestamo.frecuencia_pago, prestamo.metodo_amortizacion, new Date(prestamo.fecha_desembolso),
                     );
+                    const logoDataUrl = await getEmpresaLogoDataUrl();
                     generarPagarePDF({
                       numero_prestamo: prestamo.numero_prestamo,
                       lugar: cliente.ciudad || cliente.provincia || 'Santo Domingo',
@@ -340,6 +341,7 @@ export function PrestamoDetailSheet({ prestamoId, onClose }: Props) {
                         telefono: garante.telefono,
                       } : null,
                       firma_cliente: firmaCliente ?? undefined,
+                      logo_data_url: logoDataUrl,
                     });
                   }}>
                     <FileDown className="h-3.5 w-3.5" /> Pagaré Notarial
