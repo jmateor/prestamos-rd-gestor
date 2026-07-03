@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/format';
 import { calcAmortizacion, totalCuotas } from '@/lib/amortizacion';
 import { generarCotizacionPDF } from '@/lib/cotizacionPDF';
+import { getEmpresaLogoDataUrl } from '@/lib/empresaLogo';
 
 const TIPOS_GARANTIA = [
   { value: 'vehiculo', label: 'Vehículo', icon: Car },
