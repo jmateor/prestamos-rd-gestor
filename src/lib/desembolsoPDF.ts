@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import { formatCurrency, formatDate } from '@/lib/format';
+import { drawPdfLogo } from '@/lib/empresaLogo';
 
 export interface DesembolsoData {
   numero_prestamo: string;
