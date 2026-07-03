@@ -26,6 +26,7 @@ export interface PagareData {
     telefono: string;
   } | null;
   firma_cliente?: string;
+  logo_data_url?: string | null;
 }
 
 function formatDateLong(d: string) {
