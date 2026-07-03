@@ -145,9 +145,10 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
     toast.success('Solicitud actualizada');
   };
 
-  const handleCotizacion = () => {
+  const handleCotizacion = async () => {
     if (!solicitud) return;
     const cl = solicitud.clientes as any;
+    const logoDataUrl = await getEmpresaLogoDataUrl();
     const doc = generarCotizacionPDF({
       cliente_nombre: cl ? `${cl.primer_nombre} ${cl.primer_apellido}` : 'N/A',
       cliente_cedula: cl?.cedula ?? '',
@@ -158,6 +159,7 @@ export function SolicitudDetailDialog({ solicitudId, onClose }: Props) {
       metodo: (solicitud as any).tipo_amortizacion || 'cuota_fija',
       gastos_legales: (solicitud as any).gastos_legales,
       gastos_cierre: (solicitud as any).gastos_cierre,
+      logo_data_url: logoDataUrl,
     });
     doc.save(`cotizacion-${solicitud.numero_solicitud}.pdf`);
   };
