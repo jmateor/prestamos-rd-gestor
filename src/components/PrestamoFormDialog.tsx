@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Plus, Loader2, ShieldAlert } from 'lucide-react';
 import { useCreatePrestamo } from '@/hooks/usePrestamos';
-import { calcAmortizacion, totalCuotas } from '@/lib/amortizacion';
+import { useAmortizacionPreview } from '@/hooks/useAmortizacionPreview';
 import { formatCurrency } from '@/lib/format';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -98,22 +98,15 @@ export function PrestamoFormDialog() {
     form.setValue('tasa_interes', sol.tasa_interes_sugerida ?? 5);
   }, [selectedSolicitudId, solicitudes]);
 
-  // Preview first cuota
-  const preview = (() => {
-    try {
-      if (!watched.monto_aprobado || !watched.plazo_meses) return null;
-      const cuotas = calcAmortizacion(
-        watched.monto_aprobado,
-        watched.tasa_interes / 100,
-        watched.plazo_meses,
-        watched.frecuencia_pago,
-        watched.metodo_amortizacion,
-        new Date(watched.fecha_desembolso || Date.now()),
-      );
-      const n = totalCuotas(watched.plazo_meses, watched.frecuencia_pago);
-      return { cuota: cuotas[0]?.monto_cuota ?? 0, total: n };
-    } catch { return null; }
-  })();
+  const previewRaw = useAmortizacionPreview({
+    monto: watched.monto_aprobado,
+    tasa_mensual: watched.tasa_interes,
+    plazo_meses: watched.plazo_meses,
+    frecuencia: watched.frecuencia_pago,
+    metodo: watched.metodo_amortizacion,
+    fecha_primer_pago: watched.fecha_desembolso,
+  });
+  const preview = previewRaw ? { cuota: previewRaw.cuota, total: previewRaw.totalCuotas } : null;
 
   const onSubmit = async (values: FormValues) => {
     const gastosLeg = (selectedSol as any)?.gastos_legales || 0;
