@@ -17,7 +17,7 @@ import { useClientes } from '@/hooks/useClientes';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/format';
-import { calcAmortizacion, totalCuotas } from '@/lib/amortizacion';
+import { useAmortizacionPreview } from '@/hooks/useAmortizacionPreview';
 import { generarCotizacionPDF } from '@/lib/cotizacionPDF';
 import { getEmpresaLogoDataUrl } from '@/lib/empresaLogo';
 
@@ -116,23 +116,16 @@ export function SolicitudFormDialog() {
   const isPropiedad = tipoGarantia === 'vivienda' || tipoGarantia === 'terreno';
   const isArticulo = tipoGarantia === 'electrodomestico' || tipoGarantia === 'equipo' || tipoGarantia === 'otro';
 
-  // Preview cuota
-  const preview = (() => {
-    try {
-      if (!watched.monto_solicitado || !watched.plazo_meses) return null;
-      const cuotas = calcAmortizacion(
-        watched.monto_solicitado,
-        (watched.tasa_interes_sugerida || 5) / 100,
-        watched.plazo_meses,
-        watched.frecuencia_pago,
-        watched.tipo_amortizacion || 'cuota_fija',
-        new Date(),
-      );
-      const n = totalCuotas(watched.plazo_meses, watched.frecuencia_pago);
-      const totalInt = cuotas.reduce((a, c) => a + c.interes, 0);
-      return { cuota: cuotas[0]?.monto_cuota ?? 0, total: n, totalInteres: totalInt, totalPagar: cuotas.reduce((a, c) => a + c.monto_cuota, 0) };
-    } catch { return null; }
-  })();
+  const previewRaw = useAmortizacionPreview({
+    monto: watched.monto_solicitado,
+    tasa_mensual: watched.tasa_interes_sugerida ?? 5,
+    plazo_meses: watched.plazo_meses,
+    frecuencia: watched.frecuencia_pago,
+    metodo: watched.tipo_amortizacion || 'cuota_fija',
+  });
+  const preview = previewRaw
+    ? { cuota: previewRaw.cuota, total: previewRaw.totalCuotas, totalInteres: previewRaw.totalInteres, totalPagar: previewRaw.totalPagar }
+    : null;
 
   const montoNeto = (watched.monto_solicitado || 0) - (watched.gastos_legales || 0) - (watched.gastos_cierre || 0);
 

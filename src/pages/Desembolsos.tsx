@@ -1,25 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ShieldAlert, Banknote, Search } from 'lucide-react';
-import { useCreatePrestamo, usePrestamos } from '@/hooks/usePrestamos';
-import { calcAmortizacion, totalCuotas, fechaBaseDesde, parseLocalDate } from '@/lib/amortizacion';
+import {
+  Loader2, ShieldAlert, Banknote, Search, TrendingUp, Clock, FileCheck, Wallet,
+  Printer, ChevronRight, Lock,
+} from 'lucide-react';
+import { useCreatePrestamo, usePrestamos, type Prestamo } from '@/hooks/usePrestamos';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from '@/hooks/useUserRole';
 import { generarDesembolsoPDF } from '@/lib/desembolsoPDF';
 import { getEmpresaLogoDataUrl } from '@/lib/empresaLogo';
+import { useAmortizacionPreview } from '@/hooks/useAmortizacionPreview';
+import { useCierreAbierto } from '@/hooks/useCierreCaja';
+import { calcAmortizacion, fechaBaseDesde, parseLocalDate } from '@/lib/amortizacion';
 
 const schema = z.object({
   solicitud_id:        z.string().optional(),
@@ -39,7 +44,8 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-/** Fetch approved solicitudes not yet disbursed */
+// ── Data hooks ────────────────────────────────────────────────────────────────
+
 function useSolicitudesAprobadas() {
   return useQuery({
     queryKey: ['solicitudes-aprobadas-pendientes'],
@@ -63,7 +69,6 @@ function useSolicitudesAprobadas() {
   });
 }
 
-/** Fetch all clients for direct disbursement */
 function useClientesActivos() {
   return useQuery({
     queryKey: ['clientes-activos-desembolso'],
@@ -79,40 +84,129 @@ function useClientesActivos() {
   });
 }
 
+/** KPIs: desembolsado hoy, este mes, pendiente por desembolsar */
+function useDesembolsosKPIs() {
+  return useQuery({
+    queryKey: ['desembolsos-kpis'],
+    queryFn: async () => {
+      const hoy = new Date();
+      const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().slice(0, 10);
+      const hoyStr = hoy.toISOString().slice(0, 10);
+
+      const [{ data: hoyRows }, { data: mesRows }] = await Promise.all([
+        supabase.from('prestamos').select('monto_aprobado').eq('fecha_desembolso', hoyStr),
+        supabase.from('prestamos').select('monto_aprobado').gte('fecha_desembolso', inicioMes),
+      ]);
+
+      const desembolsadoHoy = (hoyRows ?? []).reduce((a, r: any) => a + Number(r.monto_aprobado ?? 0), 0);
+      const desembolsadoMes = (mesRows ?? []).reduce((a, r: any) => a + Number(r.monto_aprobado ?? 0), 0);
+      return {
+        desembolsadoHoy,
+        desembolsadoMes,
+        countHoy: (hoyRows ?? []).length,
+        countMes: (mesRows ?? []).length,
+      };
+    },
+  });
+}
+
+// ── Reprint helper ────────────────────────────────────────────────────────────
+
+async function reimprimirDesembolsoPDF(prestamo: Prestamo) {
+  const cl: any = prestamo.clientes;
+  if (!cl) return;
+  // recompute cuota estimada
+  const fechaPrimerPago = prestamo.fecha_inicio || prestamo.fecha_desembolso;
+  const fechaBase = fechaBaseDesde(parseLocalDate(fechaPrimerPago), prestamo.frecuencia_pago);
+  const cuotas = calcAmortizacion(
+    prestamo.monto_aprobado,
+    prestamo.tasa_interes / 100,
+    prestamo.plazo_meses,
+    prestamo.frecuencia_pago,
+    prestamo.metodo_amortizacion,
+    fechaBase,
+  );
+  const logoDataUrl = await getEmpresaLogoDataUrl();
+  const doc = generarDesembolsoPDF({
+    numero_prestamo: prestamo.numero_prestamo,
+    cliente_nombre: `${cl.primer_nombre} ${cl.primer_apellido}`,
+    cliente_cedula: cl.cedula,
+    monto_aprobado: prestamo.monto_aprobado,
+    gastos_legales: prestamo.gastos_legales ?? 0,
+    gastos_cierre: prestamo.gastos_cierre ?? 0,
+    monto_neto: prestamo.monto_aprobado - (prestamo.gastos_legales ?? 0) - (prestamo.gastos_cierre ?? 0),
+    fecha_desembolso: prestamo.fecha_desembolso,
+    tasa_interes: prestamo.tasa_interes,
+    plazo_meses: prestamo.plazo_meses,
+    frecuencia: prestamo.frecuencia_pago,
+    cuota_estimada: cuotas[0]?.monto_cuota ?? prestamo.cuota_estimada ?? 0,
+    metodo: prestamo.metodo_amortizacion,
+    logo_data_url: logoDataUrl,
+  });
+  doc.save(`desembolso-${prestamo.numero_prestamo}.pdf`);
+}
+
+// ── Small UI helpers ──────────────────────────────────────────────────────────
+
+function KpiCard({ icon: Icon, label, value, sub, tone = 'primary' }: {
+  icon: any; label: string; value: string; sub?: string;
+  tone?: 'primary' | 'success' | 'warning' | 'muted';
+}) {
+  const toneMap: Record<string, string> = {
+    primary: 'bg-primary/10 text-primary',
+    success: 'bg-emerald-500/10 text-emerald-600',
+    warning: 'bg-amber-500/10 text-amber-600',
+    muted: 'bg-muted text-muted-foreground',
+  };
+  return (
+    <Card className="shadow-sm">
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          <div className={`rounded-lg p-2 ${toneMap[tone]}`}>
+            <Icon className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground truncate">{label}</p>
+            <p className="text-lg font-bold text-foreground truncate">{value}</p>
+            {sub && <p className="text-[11px] text-muted-foreground truncate">{sub}</p>}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
 export default function Desembolsos() {
   const [mode, setMode] = useState<'solicitud' | 'directo'>('solicitud');
   const [searchRecent, setSearchRecent] = useState('');
+  const [searchSol, setSearchSol] = useState('');
+
   const createPrestamo = useCreatePrestamo();
   const { data: solicitudes, isLoading: loadingSolicitudes } = useSolicitudesAprobadas();
   const { data: clientes, isLoading: loadingClientes } = useClientesActivos();
   const { data: recentPrestamos } = usePrestamos({ search: searchRecent });
+  const { data: kpis } = useDesembolsosKPIs();
   const { isAdmin } = useUserRole();
+  const { data: cajaAbierta, isLoading: loadingCaja } = useCierreAbierto();
 
   const today = new Date().toISOString().split('T')[0];
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      solicitud_id: '',
-      cliente_id: '',
-      monto_aprobado: 0,
-      tasa_interes: 5,
-      plazo_meses: 12,
-      frecuencia_pago: 'mensual',
-      metodo_amortizacion: 'cuota_fija',
-      fecha_desembolso: today,
-      fecha_inicio_pago: today,
-      notas: '',
-      gastos_legales: 0,
-      gastos_cierre: 0,
-      proposito: '',
+      solicitud_id: '', cliente_id: '',
+      monto_aprobado: 0, tasa_interes: 5, plazo_meses: 12,
+      frecuencia_pago: 'mensual', metodo_amortizacion: 'cuota_fija',
+      fecha_desembolso: today, fecha_inicio_pago: today,
+      notas: '', gastos_legales: 0, gastos_cierre: 0, proposito: '',
     },
   });
 
   const watched = form.watch();
   const selectedSolicitudId = form.watch('solicitud_id');
 
-  // Auto-fill from solicitud
   useEffect(() => {
     if (mode !== 'solicitud' || !selectedSolicitudId || !solicitudes) return;
     const sol = solicitudes.find((s) => s.id === selectedSolicitudId);
@@ -127,31 +221,44 @@ export default function Desembolsos() {
     form.setValue('proposito', sol.proposito ?? '');
   }, [selectedSolicitudId, solicitudes, mode]);
 
-  // Preview
-  const preview = (() => {
-    try {
-      if (!watched.monto_aprobado || !watched.plazo_meses) return null;
-      const fechaPrimerPago = watched.fecha_inicio_pago || watched.fecha_desembolso || today;
-      const fechaBase = fechaBaseDesde(parseLocalDate(fechaPrimerPago), watched.frecuencia_pago);
-      const cuotas = calcAmortizacion(
-        watched.monto_aprobado,
-        watched.tasa_interes / 100,
-        watched.plazo_meses,
-        watched.frecuencia_pago,
-        watched.metodo_amortizacion,
-        fechaBase,
-      );
-      const n = totalCuotas(watched.plazo_meses, watched.frecuencia_pago);
-      return { cuota: cuotas[0]?.monto_cuota ?? 0, total: n, primerPago: cuotas[0]?.fecha_vencimiento };
-    } catch { return null; }
-  })();
+  const preview = useAmortizacionPreview({
+    monto: watched.monto_aprobado,
+    tasa_mensual: watched.tasa_interes,
+    plazo_meses: watched.plazo_meses,
+    frecuencia: watched.frecuencia_pago,
+    metodo: watched.metodo_amortizacion,
+    fecha_primer_pago: watched.fecha_inicio_pago || watched.fecha_desembolso,
+  });
 
   const selectedSol = solicitudes?.find((s) => s.id === selectedSolicitudId);
   const clienteFromSol = selectedSol?.clientes as any;
   const clienteFromDirect = mode === 'directo' ? clientes?.find(c => c.id === watched.cliente_id) : null;
   const cliente = clienteFromSol || clienteFromDirect;
 
-  const montoNeto = watched.monto_aprobado - (watched.gastos_legales || 0) - (watched.gastos_cierre || 0);
+  const montoNeto = (watched.monto_aprobado || 0) - (watched.gastos_legales || 0) - (watched.gastos_cierre || 0);
+
+  // KPI: pendientes por desembolsar
+  const pendientesMonto = useMemo(
+    () => (solicitudes ?? []).reduce((a, s: any) => a + Number(s.monto_aprobado ?? s.monto_solicitado ?? 0), 0),
+    [solicitudes],
+  );
+
+  // Filtered solicitud cards
+  const solicitudesFiltradas = useMemo(() => {
+    const q = searchSol.trim().toLowerCase();
+    if (!q) return solicitudes ?? [];
+    return (solicitudes ?? []).filter((s: any) => {
+      const cl = s.clientes;
+      const nombre = cl ? `${cl.primer_nombre} ${cl.primer_apellido}`.toLowerCase() : '';
+      return (
+        s.numero_solicitud?.toLowerCase().includes(q) ||
+        nombre.includes(q) ||
+        cl?.cedula?.toLowerCase().includes(q)
+      );
+    });
+  }, [solicitudes, searchSol]);
+
+  const cajaBloquea = !loadingCaja && !cajaAbierta;
 
   const onSubmit = async (values: FormValues) => {
     const prestamo = await createPrestamo.mutateAsync({
@@ -171,7 +278,6 @@ export default function Desembolsos() {
     });
 
     if (prestamo && cliente) {
-      const cuotaEst = preview?.cuota ?? 0;
       const logoDataUrl = await getEmpresaLogoDataUrl();
       const doc = generarDesembolsoPDF({
         numero_prestamo: prestamo.numero_prestamo || 'N/A',
@@ -185,7 +291,7 @@ export default function Desembolsos() {
         tasa_interes: values.tasa_interes,
         plazo_meses: values.plazo_meses,
         frecuencia: values.frecuencia_pago,
-        cuota_estimada: cuotaEst,
+        cuota_estimada: preview?.cuota ?? 0,
         metodo: values.metodo_amortizacion,
         logo_data_url: logoDataUrl,
       });
@@ -198,72 +304,147 @@ export default function Desembolsos() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Desembolsos</h1>
-        <p className="text-muted-foreground">Procesar desembolsos de préstamos con fecha de pago flexible</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Desembolsos</h1>
+          <p className="text-muted-foreground">Procesa entregas de préstamos con fecha de pago flexible</p>
+        </div>
+        {cajaAbierta && (
+          <Badge variant="outline" className="gap-1 border-emerald-500/40 text-emerald-600">
+            <Wallet className="h-3 w-3" /> Caja abierta
+          </Badge>
+        )}
       </div>
 
+      {/* KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <KpiCard
+          icon={TrendingUp} tone="success"
+          label="Desembolsado hoy"
+          value={formatCurrency(kpis?.desembolsadoHoy ?? 0)}
+          sub={`${kpis?.countHoy ?? 0} préstamos`}
+        />
+        <KpiCard
+          icon={Banknote} tone="primary"
+          label="Desembolsado este mes"
+          value={formatCurrency(kpis?.desembolsadoMes ?? 0)}
+          sub={`${kpis?.countMes ?? 0} préstamos`}
+        />
+        <KpiCard
+          icon={FileCheck} tone="warning"
+          label="Solicitudes pendientes"
+          value={String(solicitudes?.length ?? 0)}
+          sub="Aprobadas sin desembolsar"
+        />
+        <KpiCard
+          icon={Clock} tone="muted"
+          label="Monto pendiente"
+          value={formatCurrency(pendientesMonto)}
+          sub="Por desembolsar"
+        />
+      </div>
+
+      {/* Caja cerrada alert */}
+      {cajaBloquea && (
+        <Alert variant="destructive">
+          <Lock className="h-4 w-4" />
+          <AlertTitle>Caja cerrada</AlertTitle>
+          <AlertDescription className="flex flex-wrap items-center gap-2">
+            <span>Debes abrir caja antes de procesar un desembolso.</span>
+            <Button asChild size="sm" variant="outline" className="h-7">
+              <Link to="/cierre-caja">Abrir caja</Link>
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Form */}
+        {/* Form column */}
         <Card className="lg:col-span-2 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Banknote className="h-5 w-5" />
               Nuevo Desembolso
             </CardTitle>
-            {/* Mode toggle */}
             <div className="flex gap-2 pt-2">
               <Button
-                type="button"
-                size="sm"
+                type="button" size="sm"
                 variant={mode === 'solicitud' ? 'default' : 'outline'}
                 onClick={() => { setMode('solicitud'); form.reset(); }}
-              >
-                Desde Solicitud
-              </Button>
+              >Desde Solicitud</Button>
               <Button
-                type="button"
-                size="sm"
+                type="button" size="sm"
                 variant={mode === 'directo' ? 'default' : 'outline'}
                 onClick={() => { setMode('directo'); form.reset(); }}
-              >
-                Desembolso Directo
-              </Button>
+              >Desembolso Directo</Button>
             </div>
           </CardHeader>
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 
-                {/* Solicitud mode */}
+                {/* Solicitud mode: card selector */}
                 {mode === 'solicitud' && (
-                  <FormField control={form.control} name="solicitud_id" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Solicitud Aprobada</FormLabel>
-                      {loadingSolicitudes ? (
-                        <div className="flex justify-center py-2"><Loader2 className="h-4 w-4 animate-spin" /></div>
-                      ) : solicitudes && solicitudes.length > 0 ? (
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger><SelectValue placeholder="Seleccionar solicitud" /></SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {solicitudes.map((s) => {
-                              const cl = s.clientes as any;
-                              return (
-                                <SelectItem key={s.id} value={s.id}>
-                                  {s.numero_solicitud} — {cl ? `${cl.primer_nombre} ${cl.primer_apellido}` : 'Sin cliente'} — {formatCurrency(s.monto_solicitado)}
-                                </SelectItem>
-                              );
-                            })}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">No hay solicitudes aprobadas pendientes.</p>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+                  <div className="space-y-2">
+                    <FormLabel>Solicitud Aprobada</FormLabel>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar por número, nombre o cédula"
+                        value={searchSol}
+                        onChange={(e) => setSearchSol(e.target.value)}
+                        className="pl-9 h-9"
+                      />
+                    </div>
+                    {loadingSolicitudes ? (
+                      <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+                    ) : solicitudesFiltradas.length === 0 ? (
+                      <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+                        {searchSol ? 'Sin coincidencias' : 'No hay solicitudes aprobadas pendientes'}
+                      </div>
+                    ) : (
+                      <div className="max-h-[280px] overflow-y-auto space-y-2 pr-1">
+                        {solicitudesFiltradas.map((s: any) => {
+                          const cl = s.clientes;
+                          const selected = selectedSolicitudId === s.id;
+                          const monto = s.monto_aprobado ?? s.monto_solicitado;
+                          return (
+                            <button
+                              type="button"
+                              key={s.id}
+                              onClick={() => form.setValue('solicitud_id', s.id)}
+                              className={`w-full text-left rounded-lg border p-3 transition ${
+                                selected
+                                  ? 'border-primary bg-primary/5 ring-1 ring-primary/40'
+                                  : 'hover:border-primary/40 hover:bg-muted/40'
+                              }`}
+                            >
+                              <div className="flex justify-between items-start gap-2">
+                                <div className="min-w-0">
+                                  <p className="font-medium text-sm truncate">
+                                    {cl ? `${cl.primer_nombre} ${cl.primer_apellido}` : 'Sin cliente'}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {s.numero_solicitud} • Cédula {cl?.cedula ?? '—'}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-semibold text-sm">{formatCurrency(monto)}</p>
+                                  <p className="text-[11px] text-muted-foreground">
+                                    {s.plazo_meses} × {s.frecuencia_pago}
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <input type="hidden" {...form.register('cliente_id')} />
+                    {form.formState.errors.cliente_id && (
+                      <p className="text-xs text-destructive">{form.formState.errors.cliente_id.message}</p>
+                    )}
+                  </div>
                 )}
 
                 {/* Direct mode - client selector */}
@@ -290,22 +471,6 @@ export default function Desembolsos() {
                       <FormMessage />
                     </FormItem>
                   )} />
-                )}
-
-                {/* Hidden cliente_id for solicitud mode */}
-                {mode === 'solicitud' && <input type="hidden" {...form.register('cliente_id')} />}
-
-                {/* Client info */}
-                {cliente && (
-                  <div className="rounded-md border bg-muted/30 p-3 text-sm space-y-1">
-                    <p className="font-medium text-foreground">
-                      {cliente.primer_nombre} {cliente.primer_apellido}
-                    </p>
-                    <div className="grid grid-cols-2 gap-1 text-muted-foreground">
-                      <span>Cédula: {cliente.cedula}</span>
-                      <span>Tel: {cliente.telefono}</span>
-                    </div>
-                  </div>
                 )}
 
                 {/* Blocked alert */}
@@ -376,7 +541,6 @@ export default function Desembolsos() {
                   )} />
                 </div>
 
-                {/* DATES - Key feature: separate disbursement date from payment start */}
                 <div className="grid grid-cols-2 gap-3">
                   <FormField control={form.control} name="fecha_desembolso" render={({ field }) => (
                     <FormItem>
@@ -396,7 +560,6 @@ export default function Desembolsos() {
                   )} />
                 </div>
 
-                {/* Expenses */}
                 <div className="grid grid-cols-2 gap-3">
                   <FormField control={form.control} name="gastos_legales" render={({ field }) => (
                     <FormItem><FormLabel>Gastos Legales (RD$)</FormLabel>
@@ -412,49 +575,6 @@ export default function Desembolsos() {
                   )} />
                 </div>
 
-                {/* Net amount */}
-                {watched.monto_aprobado > 0 && (
-                  <div className="rounded-md border bg-muted/30 p-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Monto bruto:</span>
-                      <span>{formatCurrency(watched.monto_aprobado)}</span>
-                    </div>
-                    {(watched.gastos_legales > 0 || watched.gastos_cierre > 0) && (
-                      <>
-                        <div className="flex justify-between text-destructive">
-                          <span>- Gastos legales:</span>
-                          <span>{formatCurrency(watched.gastos_legales)}</span>
-                        </div>
-                        <div className="flex justify-between text-destructive">
-                          <span>- Gastos cierre:</span>
-                          <span>{formatCurrency(watched.gastos_cierre)}</span>
-                        </div>
-                      </>
-                    )}
-                    <div className="flex justify-between font-semibold border-t pt-1 mt-1">
-                      <span>Monto neto a entregar:</span>
-                      <span className="text-primary">{formatCurrency(montoNeto)}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Preview */}
-                {preview && (
-                  <div className="rounded-md bg-primary/5 border border-primary/20 p-3 text-sm">
-                    <p className="font-medium text-primary mb-1">Vista previa</p>
-                    <div className="grid grid-cols-2 gap-1 text-muted-foreground">
-                      <span>Cuota estimada:</span>
-                      <span className="font-semibold text-foreground">{formatCurrency(preview.cuota)}</span>
-                      <span>Número de cuotas:</span>
-                      <span className="font-semibold text-foreground">{preview.total}</span>
-                      <span>Primer pago:</span>
-                      <span className="font-semibold text-foreground">
-                        {preview.primerPago ? formatDate(`${preview.primerPago.getFullYear()}-${String(preview.primerPago.getMonth()+1).padStart(2,'0')}-${String(preview.primerPago.getDate()).padStart(2,'0')}`) : '—'}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
                 <FormField control={form.control} name="notas" render={({ field }) => (
                   <FormItem><FormLabel>Notas</FormLabel>
                     <FormControl><Textarea placeholder="Observaciones opcionales..." rows={2} {...field} /></FormControl>
@@ -466,9 +586,16 @@ export default function Desembolsos() {
                   <Button type="button" variant="outline" onClick={() => form.reset()}>Limpiar</Button>
                   <Button
                     type="submit"
-                    disabled={createPrestamo.isPending || !watched.cliente_id || (cliente?.estado === 'bloqueado' && !isAdmin)}
+                    disabled={
+                      createPrestamo.isPending ||
+                      !watched.cliente_id ||
+                      (cliente?.estado === 'bloqueado' && !isAdmin) ||
+                      cajaBloquea
+                    }
                   >
-                    {createPrestamo.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Procesando...</> : 'Desembolsar'}
+                    {createPrestamo.isPending
+                      ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Procesando...</>
+                      : 'Desembolsar'}
                   </Button>
                 </div>
               </form>
@@ -476,47 +603,130 @@ export default function Desembolsos() {
           </CardContent>
         </Card>
 
-        {/* Recent disbursements */}
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-base">Desembolsos Recientes</CardTitle>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar..."
-                value={searchRecent}
-                onChange={(e) => setSearchRecent(e.target.value)}
-                className="pl-9 h-8 text-sm"
-              />
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="max-h-[500px] overflow-y-auto">
-              {(recentPrestamos ?? []).slice(0, 10).map((p) => {
-                const cl = p.clientes;
-                return (
-                  <div key={p.id} className="px-4 py-3 border-b last:border-b-0 text-sm">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-mono font-medium">{p.numero_prestamo}</p>
-                        <p className="text-muted-foreground">
-                          {cl ? `${cl.primer_nombre} ${cl.primer_apellido}` : '—'}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold">{formatCurrency(p.monto_aprobado)}</p>
-                        <p className="text-xs text-muted-foreground">{formatDate(p.fecha_desembolso)}</p>
-                      </div>
+        {/* Right column: financial summary + recent */}
+        <div className="space-y-4">
+          {/* Financial summary */}
+          <Card className="shadow-sm border-primary/30">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Wallet className="h-4 w-4 text-primary" /> Resumen Financiero
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {cliente ? (
+                <div className="rounded-md bg-muted/40 p-2 text-sm">
+                  <p className="font-medium truncate">{cliente.primer_nombre} {cliente.primer_apellido}</p>
+                  <p className="text-xs text-muted-foreground">Cédula {cliente.cedula} · {cliente.telefono}</p>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Selecciona un cliente o solicitud para ver el resumen.</p>
+              )}
+
+              {(watched.monto_aprobado ?? 0) > 0 && (
+                <>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Monto bruto</span>
+                      <span>{formatCurrency(watched.monto_aprobado)}</span>
+                    </div>
+                    <div className="flex justify-between text-destructive">
+                      <span>− Gastos legales</span>
+                      <span>{formatCurrency(watched.gastos_legales || 0)}</span>
+                    </div>
+                    <div className="flex justify-between text-destructive">
+                      <span>− Gastos de cierre</span>
+                      <span>{formatCurrency(watched.gastos_cierre || 0)}</span>
                     </div>
                   </div>
-                );
-              })}
-              {(!recentPrestamos || recentPrestamos.length === 0) && (
-                <p className="text-center text-muted-foreground text-sm py-8">Sin desembolsos</p>
+
+                  <div className="rounded-lg bg-primary/10 border border-primary/30 p-3">
+                    <p className="text-[11px] uppercase tracking-wide text-primary/80">Monto neto a entregar</p>
+                    <p className="text-2xl font-bold text-primary leading-tight">{formatCurrency(montoNeto)}</p>
+                  </div>
+
+                  {preview && (
+                    <div className="rounded-md border p-3 text-sm space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Cuota estimada</span>
+                        <span className="font-semibold">{formatCurrency(preview.cuota)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Número de cuotas</span>
+                        <span className="font-semibold">{preview.totalCuotas}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Interés total</span>
+                        <span>{formatCurrency(preview.totalInteres)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Total a pagar</span>
+                        <span className="font-semibold">{formatCurrency(preview.totalPagar)}</span>
+                      </div>
+                      <div className="flex justify-between pt-1 border-t">
+                        <span className="text-muted-foreground">Primer pago</span>
+                        <span>{preview.primerPago ? formatDate(preview.primerPago) : '—'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Último pago</span>
+                        <span>{preview.ultimoPago ? formatDate(preview.ultimoPago) : '—'}</span>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          {/* Recent disbursements */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Desembolsos Recientes</CardTitle>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por número..."
+                  value={searchRecent}
+                  onChange={(e) => setSearchRecent(e.target.value)}
+                  className="pl-9 h-8 text-sm"
+                />
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="max-h-[420px] overflow-y-auto">
+                {(recentPrestamos ?? []).slice(0, 15).map((p) => {
+                  const cl = p.clientes;
+                  return (
+                    <div key={p.id} className="px-4 py-3 border-b last:border-b-0 text-sm flex items-center gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-mono font-medium text-xs">{p.numero_prestamo}</p>
+                        <p className="text-muted-foreground truncate">
+                          {cl ? `${cl.primer_nombre} ${cl.primer_apellido}` : '—'}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">{formatDate(p.fecha_desembolso)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-sm">{formatCurrency(p.monto_aprobado)}</p>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs mt-1"
+                          onClick={() => reimprimirDesembolsoPDF(p)}
+                          title="Reimprimir comprobante"
+                        >
+                          <Printer className="h-3 w-3 mr-1" /> PDF
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {(!recentPrestamos || recentPrestamos.length === 0) && (
+                  <p className="text-center text-muted-foreground text-sm py-8">Sin desembolsos</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
