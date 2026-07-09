@@ -23,8 +23,7 @@ const frecLabel: Record<string, string> = {
   diaria: 'Diaria', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual',
 };
 
-export function generarDesembolsoPDF(data: DesembolsoData): jsPDF {
-  const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+export function renderDesembolsoOnDoc(doc: jsPDF, data: DesembolsoData): void {
   const w = 216;
   let y = 15;
 
@@ -87,7 +86,6 @@ export function generarDesembolsoPDF(data: DesembolsoData): jsPDF {
   doc.line(15, y, w - 15, y);
   y += 15;
 
-  // Signature lines
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.line(20, y, 90, y);
@@ -99,6 +97,20 @@ export function generarDesembolsoPDF(data: DesembolsoData): jsPDF {
   y += 15;
   doc.setFontSize(7);
   doc.text('Declaro haber recibido el monto neto indicado y acepto las condiciones del préstamo.', w / 2, y, { align: 'center' });
+}
 
+export function generarDesembolsoPDF(data: DesembolsoData): jsPDF {
+  const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+  renderDesembolsoOnDoc(doc, data);
+  return doc;
+}
+
+/** Combina múltiples comprobantes de desembolso en un solo PDF (una página por préstamo). */
+export function generarDesembolsosMasivoPDF(items: DesembolsoData[]): jsPDF {
+  const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+  items.forEach((item, idx) => {
+    if (idx > 0) doc.addPage();
+    renderDesembolsoOnDoc(doc, item);
+  });
   return doc;
 }
