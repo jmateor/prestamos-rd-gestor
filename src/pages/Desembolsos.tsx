@@ -114,10 +114,9 @@ function useDesembolsosKPIs() {
 
 // ── Reprint helper ────────────────────────────────────────────────────────────
 
-async function reimprimirDesembolsoPDF(prestamo: Prestamo) {
+function buildDesembolsoData(prestamo: Prestamo, logoDataUrl: string | null): DesembolsoData | null {
   const cl: any = prestamo.clientes;
-  if (!cl) return;
-  // recompute cuota estimada
+  if (!cl) return null;
   const fechaPrimerPago = prestamo.fecha_inicio || prestamo.fecha_desembolso;
   const fechaBase = fechaBaseDesde(parseLocalDate(fechaPrimerPago), prestamo.frecuencia_pago);
   const cuotas = calcAmortizacion(
@@ -128,8 +127,7 @@ async function reimprimirDesembolsoPDF(prestamo: Prestamo) {
     prestamo.metodo_amortizacion,
     fechaBase,
   );
-  const logoDataUrl = await getEmpresaLogoDataUrl();
-  const doc = generarDesembolsoPDF({
+  return {
     numero_prestamo: prestamo.numero_prestamo,
     cliente_nombre: `${cl.primer_nombre} ${cl.primer_apellido}`,
     cliente_cedula: cl.cedula,
@@ -144,8 +142,26 @@ async function reimprimirDesembolsoPDF(prestamo: Prestamo) {
     cuota_estimada: cuotas[0]?.monto_cuota ?? prestamo.cuota_estimada ?? 0,
     metodo: prestamo.metodo_amortizacion,
     logo_data_url: logoDataUrl,
-  });
+  };
+}
+
+async function reimprimirDesembolsoPDF(prestamo: Prestamo) {
+  const logoDataUrl = await getEmpresaLogoDataUrl();
+  const data = buildDesembolsoData(prestamo, logoDataUrl);
+  if (!data) return;
+  const doc = generarDesembolsoPDF(data);
   doc.save(`desembolso-${prestamo.numero_prestamo}.pdf`);
+}
+
+async function reimprimirDesembolsosMasivo(prestamos: Prestamo[]) {
+  const logoDataUrl = await getEmpresaLogoDataUrl();
+  const items = prestamos
+    .map((p) => buildDesembolsoData(p, logoDataUrl))
+    .filter((d): d is DesembolsoData => d !== null);
+  if (items.length === 0) return;
+  const doc = generarDesembolsosMasivoPDF(items);
+  const stamp = new Date().toISOString().slice(0, 10);
+  doc.save(`desembolsos-masivo-${stamp}-${items.length}.pdf`);
 }
 
 // ── Small UI helpers ──────────────────────────────────────────────────────────
