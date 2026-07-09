@@ -200,6 +200,9 @@ export default function Desembolsos() {
   const [mode, setMode] = useState<'solicitud' | 'directo'>('solicitud');
   const [searchRecent, setSearchRecent] = useState('');
   const [searchSol, setSearchSol] = useState('');
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const createPrestamo = useCreatePrestamo();
   const { data: solicitudes, isLoading: loadingSolicitudes } = useSolicitudesAprobadas();
