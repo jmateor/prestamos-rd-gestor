@@ -700,8 +700,22 @@ export default function Desembolsos() {
 
           {/* Recent disbursements */}
           <Card className="shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Desembolsos Recientes</CardTitle>
+            <CardHeader className="pb-2 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle className="text-base">Desembolsos Recientes</CardTitle>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={selectMode ? 'default' : 'outline'}
+                  className="h-7 px-2 text-xs"
+                  onClick={() => {
+                    setSelectMode((v) => !v);
+                    setSelectedIds(new Set());
+                  }}
+                >
+                  {selectMode ? (<><X className="h-3 w-3 mr-1" /> Cancelar</>) : (<><CheckSquare className="h-3 w-3 mr-1" /> Selección</>)}
+                </Button>
+              </div>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -711,13 +725,86 @@ export default function Desembolsos() {
                   className="pl-9 h-8 text-sm"
                 />
               </div>
+              {selectMode && (() => {
+                const visibles = (recentPrestamos ?? []).slice(0, 15);
+                const allChecked = visibles.length > 0 && visibles.every((p) => selectedIds.has(p.id));
+                return (
+                  <div className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-2 py-1.5">
+                    <button
+                      type="button"
+                      className="text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                      onClick={() => {
+                        setSelectedIds((prev) => {
+                          if (allChecked) return new Set();
+                          const s = new Set(prev);
+                          visibles.forEach((p) => s.add(p.id));
+                          return s;
+                        });
+                      }}
+                    >
+                      {allChecked ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
+                      {allChecked ? 'Deseleccionar' : 'Seleccionar todo'}
+                    </button>
+                    <span className="text-xs font-medium">{selectedIds.size} seleccionado(s)</span>
+                  </div>
+                );
+              })()}
+              {selectMode && selectedIds.size > 0 && (
+                <Button
+                  type="button"
+                  size="sm"
+                  className="w-full h-8"
+                  disabled={bulkLoading}
+                  onClick={async () => {
+                    const seleccionados = (recentPrestamos ?? []).filter((p) => selectedIds.has(p.id));
+                    if (seleccionados.length === 0) return;
+                    setBulkLoading(true);
+                    try {
+                      await reimprimirDesembolsosMasivo(seleccionados);
+                      toast.success(`PDF generado con ${seleccionados.length} comprobante(s)`);
+                    } catch (e: any) {
+                      toast.error('Error al generar PDF masivo: ' + (e?.message ?? ''));
+                    } finally {
+                      setBulkLoading(false);
+                    }
+                  }}
+                >
+                  {bulkLoading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Printer className="h-3.5 w-3.5 mr-1" />}
+                  Reimprimir {selectedIds.size} en un PDF
+                </Button>
+              )}
             </CardHeader>
             <CardContent className="p-0">
               <div className="max-h-[420px] overflow-y-auto">
                 {(recentPrestamos ?? []).slice(0, 15).map((p) => {
                   const cl = p.clientes;
+                  const checked = selectedIds.has(p.id);
                   return (
-                    <div key={p.id} className="px-4 py-3 border-b last:border-b-0 text-sm flex items-center gap-2">
+                    <div
+                      key={p.id}
+                      className={`px-4 py-3 border-b last:border-b-0 text-sm flex items-center gap-2 ${selectMode ? 'cursor-pointer hover:bg-muted/40' : ''} ${checked ? 'bg-primary/5' : ''}`}
+                      onClick={() => {
+                        if (!selectMode) return;
+                        setSelectedIds((prev) => {
+                          const s = new Set(prev);
+                          if (s.has(p.id)) s.delete(p.id); else s.add(p.id);
+                          return s;
+                        });
+                      }}
+                    >
+                      {selectMode && (
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={() => {
+                            setSelectedIds((prev) => {
+                              const s = new Set(prev);
+                              if (s.has(p.id)) s.delete(p.id); else s.add(p.id);
+                              return s;
+                            });
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      )}
                       <div className="min-w-0 flex-1">
                         <p className="font-mono font-medium text-xs">{p.numero_prestamo}</p>
                         <p className="text-muted-foreground truncate">
@@ -727,16 +814,18 @@ export default function Desembolsos() {
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-sm">{formatCurrency(p.monto_aprobado)}</p>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 px-2 text-xs mt-1"
-                          onClick={() => reimprimirDesembolsoPDF(p)}
-                          title="Reimprimir comprobante"
-                        >
-                          <Printer className="h-3 w-3 mr-1" /> PDF
-                        </Button>
+                        {!selectMode && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-xs mt-1"
+                            onClick={() => reimprimirDesembolsoPDF(p)}
+                            title="Reimprimir comprobante"
+                          >
+                            <Printer className="h-3 w-3 mr-1" /> PDF
+                          </Button>
+                        )}
                       </div>
                     </div>
                   );
