@@ -13,8 +13,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Badge } from '@/components/ui/badge';
 import {
   Loader2, ShieldAlert, Banknote, Search, TrendingUp, Clock, FileCheck, Wallet,
-  Printer, ChevronRight, Lock,
+  Printer, ChevronRight, Lock, CheckSquare, Square, X,
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { toast } from 'sonner';
 import { useCreatePrestamo, usePrestamos, type Prestamo } from '@/hooks/usePrestamos';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { useQuery } from '@tanstack/react-query';
