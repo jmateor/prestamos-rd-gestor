@@ -20,7 +20,7 @@ import { formatCurrency, formatDate } from '@/lib/format';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from '@/hooks/useUserRole';
-import { generarDesembolsoPDF } from '@/lib/desembolsoPDF';
+import { generarDesembolsoPDF, generarDesembolsosMasivoPDF, type DesembolsoData } from '@/lib/desembolsoPDF';
 import { getEmpresaLogoDataUrl } from '@/lib/empresaLogo';
 import { useAmortizacionPreview } from '@/hooks/useAmortizacionPreview';
 import { useCierreAbierto } from '@/hooks/useCierreCaja';
