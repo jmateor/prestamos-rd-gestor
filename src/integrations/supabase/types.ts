@@ -662,6 +662,91 @@ export type Database = {
           },
         ]
       }
+      documentos_generados: {
+        Row: {
+          categoria: string | null
+          cliente_id: string | null
+          contenido_html: string
+          created_at: string
+          estado: string
+          fecha_vencimiento: string | null
+          generado_por: string | null
+          id: string
+          ip: string | null
+          numero_documento: string | null
+          papel: string
+          plantilla_id: string | null
+          prestamo_id: string | null
+          testigos_snapshot: Json
+          tipo_documento: string
+          updated_at: string
+          variables_snapshot: Json
+          version: number
+        }
+        Insert: {
+          categoria?: string | null
+          cliente_id?: string | null
+          contenido_html: string
+          created_at?: string
+          estado?: string
+          fecha_vencimiento?: string | null
+          generado_por?: string | null
+          id?: string
+          ip?: string | null
+          numero_documento?: string | null
+          papel?: string
+          plantilla_id?: string | null
+          prestamo_id?: string | null
+          testigos_snapshot?: Json
+          tipo_documento: string
+          updated_at?: string
+          variables_snapshot?: Json
+          version?: number
+        }
+        Update: {
+          categoria?: string | null
+          cliente_id?: string | null
+          contenido_html?: string
+          created_at?: string
+          estado?: string
+          fecha_vencimiento?: string | null
+          generado_por?: string | null
+          id?: string
+          ip?: string | null
+          numero_documento?: string | null
+          papel?: string
+          plantilla_id?: string | null
+          prestamo_id?: string | null
+          testigos_snapshot?: Json
+          tipo_documento?: string
+          updated_at?: string
+          variables_snapshot?: Json
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_generados_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_generados_plantilla_id_fkey"
+            columns: ["plantilla_id"]
+            isOneToOne: false
+            referencedRelation: "plantillas_documentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_generados_prestamo_id_fkey"
+            columns: ["prestamo_id"]
+            isOneToOne: false
+            referencedRelation: "prestamos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       empresa_horarios: {
         Row: {
           activo: boolean
@@ -1301,11 +1386,14 @@ export type Database = {
           activo: boolean
           actualizado_por: string | null
           archivo_url: string | null
+          categoria: string | null
           contenido_html: string | null
           created_at: string
+          descripcion: string | null
           id: string
           nombre: string
           tipo: string
+          tipo_documento: string | null
           updated_at: string
           version: number
         }
@@ -1313,11 +1401,14 @@ export type Database = {
           activo?: boolean
           actualizado_por?: string | null
           archivo_url?: string | null
+          categoria?: string | null
           contenido_html?: string | null
           created_at?: string
+          descripcion?: string | null
           id?: string
           nombre: string
           tipo: string
+          tipo_documento?: string | null
           updated_at?: string
           version?: number
         }
@@ -1325,11 +1416,14 @@ export type Database = {
           activo?: boolean
           actualizado_por?: string | null
           archivo_url?: string | null
+          categoria?: string | null
           contenido_html?: string | null
           created_at?: string
+          descripcion?: string | null
           id?: string
           nombre?: string
           tipo?: string
+          tipo_documento?: string | null
           updated_at?: string
           version?: number
         }
@@ -1832,6 +1926,42 @@ export type Database = {
           status?: string
           synced_at?: string | null
           table_name?: string
+        }
+        Relationships: []
+      }
+      testigos: {
+        Row: {
+          activo: boolean
+          cedula: string | null
+          created_at: string
+          created_by: string | null
+          direccion: string | null
+          id: string
+          nombre: string
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          cedula?: string | null
+          created_at?: string
+          created_by?: string | null
+          direccion?: string | null
+          id?: string
+          nombre: string
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          cedula?: string | null
+          created_at?: string
+          created_by?: string | null
+          direccion?: string | null
+          id?: string
+          nombre?: string
+          telefono?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
