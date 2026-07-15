@@ -15,6 +15,7 @@ import {
   CreditCard,
   CalendarClock,
   HelpCircle,
+  FileSignature,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
@@ -42,7 +43,9 @@ const navItems = [
   { title: 'Desembolsos', url: '/desembolsos', icon: Banknote },
   { title: 'Cobranza', url: '/cobranza', icon: Receipt },
   { title: 'Cobro POS', url: '/cobro-pos', icon: CreditCard },
+  { title: 'Documentos', url: '/documentos', icon: FileSignature },
   { title: 'Citas', url: '/citas', icon: CalendarClock },
+  
   
   
   

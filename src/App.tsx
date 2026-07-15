@@ -19,6 +19,7 @@ import CierreCaja from "./pages/CierreCaja";
 import Bitacora from "./pages/Bitacora";
 import Ayuda from "./pages/Ayuda";
 import Citas from "./pages/Citas";
+import Documentos from "./pages/Documentos";
 
 import CobroPOS from "./pages/CobroPOS";
 import NotFound from "./pages/NotFound";
@@ -49,6 +50,9 @@ const AppRoutes = () => (
     <Route path="/cobro-pos" element={<ProtectedRoute><CobroPOS /></ProtectedRoute>} />
     <Route path="/ayuda" element={<ProtectedRoute><Ayuda /></ProtectedRoute>} />
     <Route path="/citas" element={<ProtectedRoute><Citas /></ProtectedRoute>} />
+    <Route path="/documentos" element={<ProtectedRoute><Documentos /></ProtectedRoute>} />
+    
+    
     
     
     <Route path="*" element={<NotFound />} />
