@@ -21,6 +21,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { buildVariablesFromPrestamo, validarVariables } from '@/lib/documentoVariables';
 import { renderTemplate } from '@/lib/plantillas';
 import { generarDocx } from '@/lib/documentoDocx';
+import { renderDocxTemplate, descargarBlob } from '@/lib/docxTemplate';
 import { generarPdfDesdeTexto } from '@/lib/documentoPdf';
 import { imprimirDocumento } from '@/lib/documentoPrint';
 import { toast } from 'sonner';
