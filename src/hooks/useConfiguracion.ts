@@ -179,18 +179,19 @@ export function usePlantillas() {
 export function useActualizarPlantilla() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, contenido_html }: { id: string; contenido_html: string }) => {
-      const { data: current } = await (supabase as any).from('plantillas_documentos').select('version').eq('id', id).maybeSingle();
-      const { error } = await (supabase as any).from('plantillas_documentos').update({
-        contenido_html,
-        version: (current?.version ?? 1) + 1,
-      }).eq('id', id);
+    mutationFn: async (input: { id: string; contenido_html?: string; archivo_url?: string | null }) => {
+      const { data: current } = await (supabase as any).from('plantillas_documentos').select('version').eq('id', input.id).maybeSingle();
+      const patch: Record<string, any> = { version: (current?.version ?? 1) + 1 };
+      if (input.contenido_html !== undefined) patch.contenido_html = input.contenido_html;
+      if (input.archivo_url !== undefined) patch.archivo_url = input.archivo_url;
+      const { error } = await (supabase as any).from('plantillas_documentos').update(patch).eq('id', input.id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['plantillas_documentos'] }); toast.success('Plantilla guardada'); },
     onError: (e: any) => toast.error('Error: ' + e.message),
   });
 }
+
 
 // ── Horarios Empresa (lectura para validación) ──────────────────────────────
 export interface HorarioEmpresa {
