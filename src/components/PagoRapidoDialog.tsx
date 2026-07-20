@@ -8,6 +8,7 @@ import { useRegistrarPago } from '@/hooks/usePrestamos';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { generarReciboPago } from '@/lib/reciboPagoPDF';
 import { getEmpresaLogoDataUrl } from '@/lib/empresaLogo';
+import { guardarReciboPagoDocumento } from '@/lib/reciboPagoDocumento';
 import { supabase } from '@/integrations/supabase/client';
 import type { CuotaCobranza } from '@/hooks/useCobranza';
 
@@ -82,6 +83,26 @@ export function PagoRapidoDialog({ cuota, onClose }: Props) {
       cuotas_restantes: cuotasPendientes.length,
       saldo_total_pendiente: Math.max(0, saldoPendiente),
       logo_data_url: logoDataUrl,
+    });
+
+    await guardarReciboPagoDocumento({
+      data: {
+        monto_pagado: montoPagado,
+        fecha_pago: form.fecha,
+        metodo_pago: form.metodo,
+        referencia: form.referencia,
+        numero_cuota: cuota.numero_cuota,
+        monto_cuota: cuota.monto_cuota,
+        monto_pagado_acumulado: nuevoAcumulado,
+        numero_prestamo: pre?.numero_prestamo ?? '—',
+        monto_aprobado: prestamo?.monto_aprobado ?? 0,
+        cliente_nombre: cliente ? `${cliente.primer_nombre} ${cliente.primer_apellido}` : '—',
+        cliente_cedula: cliente?.cedula ?? '—',
+        cuotas_restantes: cuotasPendientes.length,
+        saldo_total_pendiente: Math.max(0, saldoPendiente),
+      },
+      prestamo_id: cuota.prestamo_id,
+      cliente_id: pre?.cliente_id ?? null,
     });
 
     // Download PDF directly
