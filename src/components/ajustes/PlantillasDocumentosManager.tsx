@@ -1,12 +1,16 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, FileText, Save, Eye } from 'lucide-react';
+import { Loader2, FileText, Save, Eye, Upload, Download, FileType2, Trash2, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { usePlantillas, useActualizarPlantilla, useEmpresaInfo } from '@/hooks/useConfiguracion';
 import { renderTemplate, VARIABLES_DISPONIBLES, buildRedesSocialesVars } from '@/lib/plantillas';
+import { supabase } from '@/integrations/supabase/client';
+import { extraerVariablesDocx, renderDocxTemplate, descargarBlob } from '@/lib/docxTemplate';
+
 
 const SAMPLE_EMPRESA_FALLBACK = {
   nombre: 'Mi Empresa',
@@ -54,11 +58,17 @@ export function PlantillasDocumentosManager({ isAdmin }: { isAdmin: boolean }) {
   if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 
   const current = plantillas?.find((p) => p.id === selectedId);
+  const [docxVars, setDocxVars] = useState<string[] | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
   const handleSelect = (id: string) => {
     setSelectedId(id);
     const pl = plantillas?.find((p) => p.id === id);
     setContenido(pl?.contenido_html ?? '');
     setShowPreview(false);
+    setDocxVars(null);
   };
 
   const handleSave = () => {
@@ -69,6 +79,60 @@ export function PlantillasDocumentosManager({ isAdmin }: { isAdmin: boolean }) {
   const insertVar = (clave: string) => {
     setContenido((prev) => prev + ` {{${clave}}}`);
   };
+
+  const handleUploadDocx = async (file: File) => {
+    if (!current) return;
+    if (!file.name.toLowerCase().endsWith('.docx')) {
+      toast.error('Solo se aceptan archivos .docx');
+      return;
+    }
+    setUploading(true);
+    try {
+      const detected = await extraerVariablesDocx(file);
+      setDocxVars(detected);
+      const path = `${current.id}/${Date.now()}-${file.name.replace(/[^\w.-]+/g, '_')}`;
+      const { error: upErr } = await supabase.storage
+        .from('plantillas-legales')
+        .upload(path, file, {
+          contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          upsert: false,
+        });
+      if (upErr) throw upErr;
+      // Best-effort cleanup of previous file
+      if (current.archivo_url) {
+        await supabase.storage.from('plantillas-legales').remove([current.archivo_url]).catch(() => {});
+      }
+      await actualizar.mutateAsync({ id: current.id, archivo_url: path });
+      toast.success(`Plantilla Word cargada · ${detected.length} variable(s) detectada(s)`);
+    } catch (e: any) {
+      toast.error('Error al cargar: ' + e.message);
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
+  const handleRemoveDocx = async () => {
+    if (!current?.archivo_url) return;
+    if (!confirm('¿Eliminar el archivo Word de esta plantilla?')) return;
+    await supabase.storage.from('plantillas-legales').remove([current.archivo_url]).catch(() => {});
+    await actualizar.mutateAsync({ id: current.id, archivo_url: null });
+    setDocxVars(null);
+  };
+
+  const handleTestDocx = async () => {
+    if (!current?.archivo_url) return;
+    setTesting(true);
+    try {
+      const blob = await renderDocxTemplate(current.archivo_url, SAMPLE_VARS);
+      descargarBlob(blob, `${current.nombre}-prueba`);
+    } catch (e: any) {
+      toast.error('Error al generar prueba: ' + e.message);
+    } finally {
+      setTesting(false);
+    }
+  };
+
 
   return (
     <Card>
@@ -94,6 +158,71 @@ export function PlantillasDocumentosManager({ isAdmin }: { isAdmin: boolean }) {
 
         {current && (
           <>
+            {/* ── Plantilla Word (docx) ─────────────────────────────── */}
+            <div className="rounded-md border bg-primary/5 p-3 space-y-2">
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2 text-sm font-semibold">
+                    <FileType2 className="h-4 w-4 text-primary" /> Plantilla Word (.docx)
+                  </div>
+                  <p className="text-[11px] text-muted-foreground max-w-md">
+                    Sube tu propio documento Word con marcadores tipo <code className="bg-muted px-1 rounded">{'{{cliente_nombre}}'}</code>. El sistema lo llenará automáticamente con los datos del préstamo al generar el documento.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    className="hidden"
+                    onChange={(e) => e.target.files?.[0] && handleUploadDocx(e.target.files[0])}
+                  />
+                  {isAdmin && (
+                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => fileRef.current?.click()} disabled={uploading}>
+                      {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                      {current.archivo_url ? 'Reemplazar' : 'Cargar Word'}
+                    </Button>
+                  )}
+                  {current.archivo_url && (
+                    <>
+                      <Button size="sm" variant="outline" className="gap-1.5" onClick={handleTestDocx} disabled={testing}>
+                        {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                        Prueba
+                      </Button>
+                      {isAdmin && (
+                        <Button size="sm" variant="ghost" className="gap-1.5 text-destructive" onClick={handleRemoveDocx}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {current.archivo_url ? (
+                <div className="flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-400">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Plantilla Word activa · el sistema la usará al generar este documento
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground italic">
+                  Sin archivo Word cargado — se usará la plantilla de texto de abajo.
+                </p>
+              )}
+
+              {docxVars && docxVars.length > 0 && (
+                <div className="rounded bg-background/60 border p-2 space-y-1">
+                  <p className="text-[11px] font-medium">Variables detectadas en tu Word:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {docxVars.map((v) => (
+                      <Badge key={v} variant="secondary" className="text-[10px] font-mono">{`{{${v}}}`}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+
             <div className="flex flex-wrap gap-1 border rounded-md bg-muted/30 p-2">
               <span className="text-[11px] text-muted-foreground w-full mb-1">Insertar variable:</span>
               {VARIABLES_DISPONIBLES.map((v) => (
