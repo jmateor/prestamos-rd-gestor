@@ -298,7 +298,7 @@ export default function CobroPOS() {
           usuario: user?.email ?? '',
         },
         prestamo_id: selectedPrestamo.id,
-        cliente_id: selectedPrestamo.clientes.id,
+        cliente_id: selectedPrestamo.cliente_id,
       });
     } catch (e) {
       console.warn('auto-save recibo', e);
