@@ -267,6 +267,42 @@ export default function CobroPOS() {
 
     setStep('done');
     toast.success('Pago registrado exitosamente');
+
+    // Auto-save receipt document (linked to loan + history)
+    try {
+      const { data: cuotasAct } = await supabase
+        .from('cuotas')
+        .select('monto_cuota, monto_pagado, estado')
+        .eq('prestamo_id', selectedPrestamo.id)
+        .order('numero_cuota');
+      const pendientes = cuotasAct?.filter(c => c.estado !== 'pagada') ?? [];
+      const saldo = cuotasAct?.reduce((a, c) => a + (c.monto_cuota - c.monto_pagado), 0) ?? 0;
+      const primera = distribucion[0];
+      await guardarReciboPagoDocumento({
+        data: {
+          monto_pagado: totalDistribuido,
+          fecha_pago: today,
+          metodo_pago: metodoPago,
+          referencia: metodoPago === 'transferencia' ? referencia : '',
+          numero_cuota: primera.cuota.numero_cuota,
+          monto_cuota: primera.total,
+          monto_pagado_acumulado: primera.total,
+          numero_prestamo: selectedPrestamo.numero_prestamo,
+          monto_aprobado: selectedPrestamo.monto_aprobado,
+          cliente_nombre: `${selectedPrestamo.clientes.primer_nombre} ${selectedPrestamo.clientes.primer_apellido}`,
+          cliente_cedula: selectedPrestamo.clientes.cedula,
+          cuotas_restantes: pendientes.length,
+          saldo_total_pendiente: Math.max(0, saldo),
+          monto_recibido: metodoPago === 'efectivo' ? montoRecibidoNum : totalDistribuido,
+          devuelta: metodoPago === 'efectivo' ? devuelta : 0,
+          usuario: user?.email ?? '',
+        },
+        prestamo_id: selectedPrestamo.id,
+        cliente_id: selectedPrestamo.clientes.id,
+      });
+    } catch (e) {
+      console.warn('auto-save recibo', e);
+    }
   };
 
   // ── Print Receipt ───────────────────────────────────────────
