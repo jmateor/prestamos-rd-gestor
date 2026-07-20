@@ -158,6 +158,71 @@ export function PlantillasDocumentosManager({ isAdmin }: { isAdmin: boolean }) {
 
         {current && (
           <>
+            {/* ── Plantilla Word (docx) ─────────────────────────────── */}
+            <div className="rounded-md border bg-primary/5 p-3 space-y-2">
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2 text-sm font-semibold">
+                    <FileType2 className="h-4 w-4 text-primary" /> Plantilla Word (.docx)
+                  </div>
+                  <p className="text-[11px] text-muted-foreground max-w-md">
+                    Sube tu propio documento Word con marcadores tipo <code className="bg-muted px-1 rounded">{'{{cliente_nombre}}'}</code>. El sistema lo llenará automáticamente con los datos del préstamo al generar el documento.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    className="hidden"
+                    onChange={(e) => e.target.files?.[0] && handleUploadDocx(e.target.files[0])}
+                  />
+                  {isAdmin && (
+                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => fileRef.current?.click()} disabled={uploading}>
+                      {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                      {current.archivo_url ? 'Reemplazar' : 'Cargar Word'}
+                    </Button>
+                  )}
+                  {current.archivo_url && (
+                    <>
+                      <Button size="sm" variant="outline" className="gap-1.5" onClick={handleTestDocx} disabled={testing}>
+                        {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                        Prueba
+                      </Button>
+                      {isAdmin && (
+                        <Button size="sm" variant="ghost" className="gap-1.5 text-destructive" onClick={handleRemoveDocx}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {current.archivo_url ? (
+                <div className="flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-400">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Plantilla Word activa · el sistema la usará al generar este documento
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground italic">
+                  Sin archivo Word cargado — se usará la plantilla de texto de abajo.
+                </p>
+              )}
+
+              {docxVars && docxVars.length > 0 && (
+                <div className="rounded bg-background/60 border p-2 space-y-1">
+                  <p className="text-[11px] font-medium">Variables detectadas en tu Word:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {docxVars.map((v) => (
+                      <Badge key={v} variant="secondary" className="text-[10px] font-mono">{`{{${v}}}`}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+
             <div className="flex flex-wrap gap-1 border rounded-md bg-muted/30 p-2">
               <span className="text-[11px] text-muted-foreground w-full mb-1">Insertar variable:</span>
               {VARIABLES_DISPONIBLES.map((v) => (
