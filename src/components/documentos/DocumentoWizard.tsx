@@ -144,7 +144,16 @@ export function DocumentoWizard({ open, onOpenChange, prestamoIdInicial }: Props
 
   const handleDescargarDocx = async () => {
     if (faltantes.length) { toast.error('Faltan datos: ' + faltantes.join(', ')); return; }
-    try { await generarDocx(preview, papel, nombreArchivo()); } catch (e: any) { toast.error('Error: ' + e.message); }
+    try {
+      // Prefer uploaded Word template when available
+      const archivoUrl = (plantillaSel as any)?.archivo_url;
+      if (archivoUrl) {
+        const blob = await renderDocxTemplate(archivoUrl, variables);
+        descargarBlob(blob, nombreArchivo());
+        return;
+      }
+      await generarDocx(preview, papel, nombreArchivo());
+    } catch (e: any) { toast.error('Error: ' + e.message); }
   };
   const handleDescargarPdf = () => {
     if (faltantes.length) { toast.error('Faltan datos: ' + faltantes.join(', ')); return; }
