@@ -85,6 +85,26 @@ export function PagoRapidoDialog({ cuota, onClose }: Props) {
       logo_data_url: logoDataUrl,
     });
 
+    await guardarReciboPagoDocumento({
+      data: {
+        monto_pagado: montoPagado,
+        fecha_pago: form.fecha,
+        metodo_pago: form.metodo,
+        referencia: form.referencia,
+        numero_cuota: cuota.numero_cuota,
+        monto_cuota: cuota.monto_cuota,
+        monto_pagado_acumulado: nuevoAcumulado,
+        numero_prestamo: pre?.numero_prestamo ?? '—',
+        monto_aprobado: prestamo?.monto_aprobado ?? 0,
+        cliente_nombre: cliente ? `${cliente.primer_nombre} ${cliente.primer_apellido}` : '—',
+        cliente_cedula: cliente?.cedula ?? '—',
+        cuotas_restantes: cuotasPendientes.length,
+        saldo_total_pendiente: Math.max(0, saldoPendiente),
+      },
+      prestamo_id: cuota.prestamo_id,
+      cliente_id: (cliente as any)?.id ?? null,
+    });
+
     // Download PDF directly
     doc.save(`recibo-pago-${pre?.numero_prestamo ?? 'pago'}-cuota${cuota.numero_cuota}.pdf`);
   };
