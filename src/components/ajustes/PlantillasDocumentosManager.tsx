@@ -58,11 +58,17 @@ export function PlantillasDocumentosManager({ isAdmin }: { isAdmin: boolean }) {
   if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 
   const current = plantillas?.find((p) => p.id === selectedId);
+  const [docxVars, setDocxVars] = useState<string[] | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
   const handleSelect = (id: string) => {
     setSelectedId(id);
     const pl = plantillas?.find((p) => p.id === id);
     setContenido(pl?.contenido_html ?? '');
     setShowPreview(false);
+    setDocxVars(null);
   };
 
   const handleSave = () => {
@@ -73,6 +79,60 @@ export function PlantillasDocumentosManager({ isAdmin }: { isAdmin: boolean }) {
   const insertVar = (clave: string) => {
     setContenido((prev) => prev + ` {{${clave}}}`);
   };
+
+  const handleUploadDocx = async (file: File) => {
+    if (!current) return;
+    if (!file.name.toLowerCase().endsWith('.docx')) {
+      toast.error('Solo se aceptan archivos .docx');
+      return;
+    }
+    setUploading(true);
+    try {
+      const detected = await extraerVariablesDocx(file);
+      setDocxVars(detected);
+      const path = `${current.id}/${Date.now()}-${file.name.replace(/[^\w.-]+/g, '_')}`;
+      const { error: upErr } = await supabase.storage
+        .from('plantillas-legales')
+        .upload(path, file, {
+          contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          upsert: false,
+        });
+      if (upErr) throw upErr;
+      // Best-effort cleanup of previous file
+      if (current.archivo_url) {
+        await supabase.storage.from('plantillas-legales').remove([current.archivo_url]).catch(() => {});
+      }
+      await actualizar.mutateAsync({ id: current.id, archivo_url: path });
+      toast.success(`Plantilla Word cargada · ${detected.length} variable(s) detectada(s)`);
+    } catch (e: any) {
+      toast.error('Error al cargar: ' + e.message);
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
+  const handleRemoveDocx = async () => {
+    if (!current?.archivo_url) return;
+    if (!confirm('¿Eliminar el archivo Word de esta plantilla?')) return;
+    await supabase.storage.from('plantillas-legales').remove([current.archivo_url]).catch(() => {});
+    await actualizar.mutateAsync({ id: current.id, archivo_url: null });
+    setDocxVars(null);
+  };
+
+  const handleTestDocx = async () => {
+    if (!current?.archivo_url) return;
+    setTesting(true);
+    try {
+      const blob = await renderDocxTemplate(current.archivo_url, SAMPLE_VARS);
+      descargarBlob(blob, `${current.nombre}-prueba`);
+    } catch (e: any) {
+      toast.error('Error al generar prueba: ' + e.message);
+    } finally {
+      setTesting(false);
+    }
+  };
+
 
   return (
     <Card>
