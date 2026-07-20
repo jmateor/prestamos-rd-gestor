@@ -1,12 +1,16 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, FileText, Save, Eye } from 'lucide-react';
+import { Loader2, FileText, Save, Eye, Upload, Download, FileType2, Trash2, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { usePlantillas, useActualizarPlantilla, useEmpresaInfo } from '@/hooks/useConfiguracion';
 import { renderTemplate, VARIABLES_DISPONIBLES, buildRedesSocialesVars } from '@/lib/plantillas';
+import { supabase } from '@/integrations/supabase/client';
+import { extraerVariablesDocx, renderDocxTemplate, descargarBlob } from '@/lib/docxTemplate';
+
 
 const SAMPLE_EMPRESA_FALLBACK = {
   nombre: 'Mi Empresa',
