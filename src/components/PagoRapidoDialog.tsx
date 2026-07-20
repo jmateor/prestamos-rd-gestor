@@ -102,7 +102,7 @@ export function PagoRapidoDialog({ cuota, onClose }: Props) {
         saldo_total_pendiente: Math.max(0, saldoPendiente),
       },
       prestamo_id: cuota.prestamo_id,
-      cliente_id: (cliente as any)?.id ?? null,
+      cliente_id: pre?.cliente_id ?? null,
     });
 
     // Download PDF directly
