@@ -21,6 +21,7 @@ import { ClienteDocumentosTab } from '@/components/ClienteDocumentosTab';
 import { ClienteReferenciasTab } from '@/components/ClienteReferenciasTab';
 import { CreditScoreIndicator } from '@/components/CreditScoreIndicator';
 import { ClienteRiskAlert } from '@/components/ClienteRiskAlert';
+import { InteraccionesTimeline } from '@/components/InteraccionesTimeline';
 
 const estadoBadge: Record<string, string> = {
   activo: 'bg-success/10 text-success border-success/20',
@@ -152,7 +153,7 @@ export function ClienteProfileSheet({ cliente, open, onOpenChange }: Props) {
           </SheetHeader>
 
           <Tabs defaultValue="resumen" className="mt-4">
-            <TabsList className="grid w-full grid-cols-7 text-xs">
+            <TabsList className="grid w-full grid-cols-8 text-xs">
               <TabsTrigger value="resumen">Resumen</TabsTrigger>
               <TabsTrigger value="personal">Personal</TabsTrigger>
               <TabsTrigger value="referencias">Familia</TabsTrigger>
@@ -160,7 +161,12 @@ export function ClienteProfileSheet({ cliente, open, onOpenChange }: Props) {
               <TabsTrigger value="bienes">Bienes</TabsTrigger>
               <TabsTrigger value="historial">Historial</TabsTrigger>
               <TabsTrigger value="crediticio">Crédito</TabsTrigger>
+              <TabsTrigger value="timeline">Timeline</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="timeline" className="mt-4">
+              <InteraccionesTimeline clienteId={cliente.id} />
+            </TabsContent>
 
             {/* ── Resumen ── */}
             <TabsContent value="resumen" className="space-y-4 mt-4">
