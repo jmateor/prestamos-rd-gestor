@@ -60,6 +60,7 @@ export async function buildVariablesFromPrestamo(prestamoId: string, opts?: {
 
   const vars: Record<string, any> = {
     __monto_num: Number(prestamo.monto_aprobado ?? 0),
+    // Prestamista (empresa)
     prestamista_nombre: empresa?.nombre ?? '',
     prestamista_cedula: empresa?.rnc ?? '',
     prestamista_direccion: empresa?.direccion ?? '',
