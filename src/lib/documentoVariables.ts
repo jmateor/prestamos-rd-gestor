@@ -59,6 +59,7 @@ export async function buildVariablesFromPrestamo(prestamoId: string, opts?: {
   }));
 
   const vars: Record<string, any> = {
+    __monto_num: Number(prestamo.monto_aprobado ?? 0),
     // Prestamista (empresa)
     prestamista_nombre: empresa?.nombre ?? '',
     prestamista_cedula: empresa?.rnc ?? '',
@@ -140,7 +141,7 @@ export function validarVariables(vars: Record<string, any>, tipo: string): strin
   if (!vars.cliente_telefono) faltantes.push('Teléfono del cliente');
   if (!vars.prestamista_nombre) faltantes.push('Empresa (prestamista) — configurar en Ajustes');
   if (!vars.numero_prestamo) faltantes.push('Número del préstamo');
-  if (!vars.monto || vars.monto.includes('0.00')) faltantes.push('Monto del préstamo');
+  if (!vars.__monto_num || vars.__monto_num <= 0) faltantes.push('Monto del préstamo');
 
   if (tipo.includes('garantia') || tipo.includes('venta_reserva') || tipo.includes('entrega')) {
     if (!vars.marca) faltantes.push('Datos del vehículo / garantía prendaria');
