@@ -1219,6 +1219,131 @@ export type Database = {
           },
         ]
       }
+      interacciones: {
+        Row: {
+          asunto: string | null
+          cliente_id: string | null
+          contenido: string | null
+          created_at: string
+          created_by: string | null
+          direccion: string | null
+          fecha: string
+          id: string
+          lead_id: string | null
+          tipo: string
+        }
+        Insert: {
+          asunto?: string | null
+          cliente_id?: string | null
+          contenido?: string | null
+          created_at?: string
+          created_by?: string | null
+          direccion?: string | null
+          fecha?: string
+          id?: string
+          lead_id?: string | null
+          tipo: string
+        }
+        Update: {
+          asunto?: string | null
+          cliente_id?: string | null
+          contenido?: string | null
+          created_at?: string
+          created_by?: string | null
+          direccion?: string | null
+          fecha?: string
+          id?: string
+          lead_id?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interacciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interacciones_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          asignado_a: string | null
+          cedula: string | null
+          ciudad: string | null
+          cliente_id: string | null
+          convertido_at: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          etapa: string
+          id: string
+          monto_estimado: number | null
+          nombre_completo: string
+          notas: string | null
+          origen: string
+          perdido_motivo: string | null
+          proposito: string | null
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          asignado_a?: string | null
+          cedula?: string | null
+          ciudad?: string | null
+          cliente_id?: string | null
+          convertido_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          etapa?: string
+          id?: string
+          monto_estimado?: number | null
+          nombre_completo: string
+          notas?: string | null
+          origen?: string
+          perdido_motivo?: string | null
+          proposito?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          asignado_a?: string | null
+          cedula?: string | null
+          ciudad?: string | null
+          cliente_id?: string | null
+          convertido_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          etapa?: string
+          id?: string
+          monto_estimado?: number | null
+          nombre_completo?: string
+          notas?: string | null
+          origen?: string
+          perdido_motivo?: string | null
+          proposito?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notas_credito: {
         Row: {
           aplicada: boolean | null
@@ -1928,6 +2053,79 @@ export type Database = {
           table_name?: string
         }
         Relationships: []
+      }
+      tareas: {
+        Row: {
+          asignado_a: string | null
+          cliente_id: string | null
+          completada_at: string | null
+          created_at: string
+          created_by: string | null
+          descripcion: string | null
+          estado: string
+          fecha_vencimiento: string | null
+          id: string
+          lead_id: string | null
+          prestamo_id: string | null
+          prioridad: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          asignado_a?: string | null
+          cliente_id?: string | null
+          completada_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          descripcion?: string | null
+          estado?: string
+          fecha_vencimiento?: string | null
+          id?: string
+          lead_id?: string | null
+          prestamo_id?: string | null
+          prioridad?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          asignado_a?: string | null
+          cliente_id?: string | null
+          completada_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          descripcion?: string | null
+          estado?: string
+          fecha_vencimiento?: string | null
+          id?: string
+          lead_id?: string | null
+          prestamo_id?: string | null
+          prioridad?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_prestamo_id_fkey"
+            columns: ["prestamo_id"]
+            isOneToOne: false
+            referencedRelation: "prestamos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       testigos: {
         Row: {

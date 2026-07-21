@@ -16,6 +16,8 @@ import {
   CalendarClock,
   HelpCircle,
   FileSignature,
+  Target,
+  CheckSquare,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
@@ -34,9 +36,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCitasPendientesCount } from '@/hooks/useCitas';
+import { useTareasPendientesCount } from '@/hooks/useTareas';
 
 const navItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
+  { title: 'Leads', url: '/leads', icon: Target },
   { title: 'Clientes', url: '/clientes', icon: Users },
   { title: 'Solicitudes', url: '/solicitudes', icon: FileText },
   { title: 'Préstamos', url: '/prestamos', icon: Landmark },
@@ -45,10 +49,7 @@ const navItems = [
   { title: 'Cobro POS', url: '/cobro-pos', icon: CreditCard },
   { title: 'Documentos', url: '/documentos', icon: FileSignature },
   { title: 'Citas', url: '/citas', icon: CalendarClock },
-  
-  
-  
-  
+  { title: 'Tareas', url: '/tareas', icon: CheckSquare },
   { title: 'Reportes', url: '/reportes', icon: BarChart3 },
   { title: 'Cierre Caja', url: '/cierre-caja', icon: Wallet },
   { title: 'Bitácora', url: '/bitacora', icon: History },
@@ -59,6 +60,7 @@ const navItems = [
 export function AppSidebar() {
   const { signOut, user } = useAuth();
   const { data: citasPendientes = 0 } = useCitasPendientesCount();
+  const { data: tareasPendientes = 0 } = useTareasPendientesCount();
 
   return (
     <Sidebar className="border-r-0">
@@ -95,6 +97,11 @@ export function AppSidebar() {
                       {item.title === 'Citas' && citasPendientes > 0 && (
                         <Badge className="h-5 min-w-5 px-1.5 bg-primary text-primary-foreground text-[10px]">
                           {citasPendientes > 99 ? '99+' : citasPendientes}
+                        </Badge>
+                      )}
+                      {item.title === 'Tareas' && tareasPendientes > 0 && (
+                        <Badge className="h-5 min-w-5 px-1.5 bg-amber-500 text-white text-[10px]">
+                          {tareasPendientes > 99 ? '99+' : tareasPendientes}
                         </Badge>
                       )}
                     </NavLink>

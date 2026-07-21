@@ -20,6 +20,8 @@ import Bitacora from "./pages/Bitacora";
 import Ayuda from "./pages/Ayuda";
 import Citas from "./pages/Citas";
 import Documentos from "./pages/Documentos";
+import Leads from "./pages/Leads";
+import Tareas from "./pages/Tareas";
 
 import CobroPOS from "./pages/CobroPOS";
 import NotFound from "./pages/NotFound";
@@ -51,6 +53,8 @@ const AppRoutes = () => (
     <Route path="/ayuda" element={<ProtectedRoute><Ayuda /></ProtectedRoute>} />
     <Route path="/citas" element={<ProtectedRoute><Citas /></ProtectedRoute>} />
     <Route path="/documentos" element={<ProtectedRoute><Documentos /></ProtectedRoute>} />
+    <Route path="/leads" element={<ProtectedRoute><Leads /></ProtectedRoute>} />
+    <Route path="/tareas" element={<ProtectedRoute><Tareas /></ProtectedRoute>} />
     
     
     
